@@ -192,8 +192,16 @@
                 border-radius: 10px;
             }
 
-            .next-btn-container {
+            .actions-row {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 0.8rem;
                 margin-top: 1.5rem;
+            }
+
+            .next-btn-container {
                 display: none;
                 justify-content: center;
             }
@@ -202,16 +210,17 @@
             }
 
             .btn-next,
-            .btn-retry {
+            .btn-retry,
+            .btn-mode {
                 display: inline-flex;
                 align-items: center;
                 gap: 0.5rem;
-                padding: 0.8rem 2.5rem;
+                padding: 0.6rem 1.2rem;
                 border: none;
                 border-radius: 60px;
                 font-family: "Montserrat", sans-serif;
                 font-weight: 600;
-                font-size: 1rem;
+                font-size: 0.85rem;
                 cursor: pointer;
                 transition: all 0.25s ease;
             }
@@ -219,6 +228,8 @@
                 background: linear-gradient(135deg, #10b981, #059669);
                 color: white;
                 box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+                padding: 0.8rem 2.5rem;
+                font-size: 1rem;
             }
             .btn-next:hover {
                 transform: translateY(-2px);
@@ -232,6 +243,8 @@
                 background: linear-gradient(135deg, #f59e0b, #d97706);
                 color: white;
                 box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+                padding: 0.8rem 2.5rem;
+                font-size: 1rem;
             }
             .btn-retry:hover {
                 transform: translateY(-2px);
@@ -239,6 +252,30 @@
             }
             .btn-retry:active {
                 transform: scale(0.95);
+            }
+
+            .btn-mode {
+                background: rgba(255, 255, 255, 0.06);
+                color: rgba(255, 255, 255, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                font-size: 0.75rem;
+                padding: 0.4rem 1rem;
+                letter-spacing: 0.3px;
+            }
+            .btn-mode:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: #f0f6fc;
+                border-color: rgba(255, 255, 255, 0.15);
+            }
+            .btn-mode.active-markdown {
+                border-color: #4a8cff;
+                color: #4a8cff;
+                background: rgba(74, 140, 255, 0.08);
+            }
+            .btn-mode.active-universal {
+                border-color: #f59e0b;
+                color: #f59e0b;
+                background: rgba(245, 158, 11, 0.08);
             }
 
             .app-footer {
@@ -305,6 +342,15 @@
                     height: 110px;
                     font-size: 3rem;
                 }
+                .actions-row {
+                    flex-direction: column;
+                    gap: 0.6rem;
+                }
+                .btn-next,
+                .btn-retry {
+                    width: 100%;
+                    justify-content: center;
+                }
             }
         </style>
     </head>
@@ -329,12 +375,17 @@
                 <div class="content" id="transcriptContent"></div>
             </div>
 
-            <div class="next-btn-container" id="nextBtnContainer">
-                <button class="btn-next" id="nextBtn">➡️ Siguiente</button>
-            </div>
+            <!-- Fila de acciones: modo + siguiente / reintento -->
+            <div class="actions-row">
+                <button class="btn-mode active-markdown" id="modeToggleBtn">Modo: Markdown</button>
 
-            <div class="next-btn-container" id="retryContainer" style="display: none;">
-                <button class="btn-retry" id="retryBtn">🔄 Reintentar</button>
+                <div class="next-btn-container" id="nextBtnContainer">
+                    <button class="btn-next" id="nextBtn">➡️ Siguiente</button>
+                </div>
+
+                <div class="next-btn-container" id="retryContainer" style="display: none;">
+                    <button class="btn-retry" id="retryBtn">🔄 Reintentar</button>
+                </div>
             </div>
 
             <div class="app-footer">
@@ -360,10 +411,11 @@
                 const nextBtn = document.getElementById("nextBtn");
                 const retryContainer = document.getElementById("retryContainer");
                 const retryBtn = document.getElementById("retryBtn");
+                const modeToggleBtn = document.getElementById("modeToggleBtn");
                 const toast = document.getElementById("toast");
 
-                // ===== PROMPT =====
-                const PROMPT = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
+                // ===== PROMPTS =====
+                const PROMPT_MARKDOWN = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
 
                 Reglas estrictas que debes seguir:
 
@@ -381,12 +433,33 @@
 
                 Transcripción:`;
 
+                const PROMPT_UNIVERSAL = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
+
+                Reglas estrictas que debes seguir:
+
+                1. Formato de salida: Devuelve ÚNICAMENTE un bloque de código con el texto plano generado (sin markdown ni formatos por el estilo). No escribas absolutamente nada fuera de este bloque.
+
+                2. Título: Genera un título concreto y coherente que refleje fielmente el tema central de mi idea. Que sea descriptivo, no comercial.
+
+                3. Estructura libre y adaptable: NO uses plantillas rígidas como "Visión Ejecutiva", "Desglose Conceptual" o "Próximos pasos" a menos que encajen naturalmente. En su lugar, observa la naturaleza de lo que te cuento (puede ser una app, un proyecto, un video, una reflexión filosófica, un problema personal, etc.) y **elige la estructura que mejor le siente**. Usa los títulos de sección que creas convenientes para darle coherencia, pero si la idea es sencilla, incluso puedes prescindir de ellos y usar solo párrafos y viñetas sueltas.
+
+                4. Adaptación al tamaño: Si mi transcripción es corta y simple, devuélveme un desarrollo breve y conciso, solo lo justo para que se entienda mejor que como lo dije. Si es compleja y larga, profundiza y divídela en más partes. La longitud final debe ser proporcional a la complejidad de lo que he dicho. No alargues ni recortes artificialmente.
+
+                5. Fidelidad absoluta: No inventes cosas que no he dicho, no cambies el enfoque ni le des un giro "cool" o "comercial" a mi idea. Tu trabajo es pulir y ordenar, no reescribir. Si hay vacíos lógicos, puedes rellenarlos solo si son evidentes y necesarios para la coherencia, pero siempre manteniendo mi intención original.
+
+                Al final de todo el desarrollo, y **solo al final**, añade una sección llamada "Otras perspectivas y mejoras". Aquí sí quiero que te tomes libertades constructivas. Sugiere 2 o 3 formas alternativas de abordar la idea, pequeños ajustes que no haya considerado, preguntas clave que debería hacerme, o herramientas/recursos que podrían ayudarme a profundizar. Esta sección debe ser breve y en tono de sugerencia, no de orden.
+
+                Transcripción:`;
+
                 // ===== ESTADO =====
                 let isRecording = false;
                 let recognition = null;
                 let transcript = "";
                 let finalTranscript = "";
                 let isStoppedByUser = false;
+
+                // ===== MODO =====
+                let currentMode = 'markdown'; // 'markdown' o 'universal'
 
                 // ===== UTILIDADES =====
                 function showToast(msg, type = "info", duration = 3500) {
@@ -400,6 +473,10 @@
                     toast._hideTimer = setTimeout(() => {
                         toast.classList.remove("visible");
                     }, duration);
+                }
+
+                function getCurrentPrompt() {
+                    return currentMode === 'markdown' ? PROMPT_MARKDOWN : PROMPT_UNIVERSAL;
                 }
 
                 function copyToClipboard(text) {
@@ -709,7 +786,7 @@
                         return;
                     }
 
-                    const fullText = PROMPT + "\n\n" + text;
+                    const fullText = getCurrentPrompt() + "\n\n" + text;
                     copyToClipboard(fullText)
                         .then(() => {
                             showToast("✅ Prompt copiado al portapapeles", "success", 3000);
@@ -728,15 +805,31 @@
                     startRecognition();
                 }
 
+                // ===== MANEJADOR DE MODO =====
+                function toggleMode() {
+                    if (currentMode === 'markdown') {
+                        currentMode = 'universal';
+                        modeToggleBtn.textContent = 'Modo: Universal';
+                        modeToggleBtn.className = 'btn-mode active-universal';
+                        showToast('Modo Universal activado (texto plano)', 'info', 2000);
+                    } else {
+                        currentMode = 'markdown';
+                        modeToggleBtn.textContent = 'Modo: Markdown';
+                        modeToggleBtn.className = 'btn-mode active-markdown';
+                        showToast('Modo Markdown activado', 'info', 2000);
+                    }
+                }
+
                 // ===== EVENTOS =====
                 micBtn.addEventListener("click", toggleRecording);
                 nextBtn.addEventListener("click", handleNext);
                 retryBtn.addEventListener("click", handleRetry);
+                modeToggleBtn.addEventListener("click", toggleMode);
 
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v6.1 (soporte iPhone con googlegemini://)");
+                console.log("🎙️ ideas app v6.2 (modo universal/markdown)");
             })();
         </script>
     </body>
