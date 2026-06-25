@@ -106,6 +106,11 @@
                 transform: none !important;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             }
+            .mic-btn.reconnecting {
+                background: linear-gradient(135deg, #f59e0b, #d97706);
+                box-shadow: 0 8px 32px rgba(245, 158, 11, 0.3);
+                animation: pulse 0.8s infinite;
+            }
 
             @keyframes pulse {
                 0% {
@@ -143,6 +148,9 @@
             .mic-status.small {
                 font-size: 0.85rem;
                 opacity: 0.7;
+            }
+            .mic-status.reconnecting {
+                color: #f59e0b;
             }
 
             /* ========== ÁREA DE TRANSCRIPCIÓN ========== */
@@ -265,6 +273,10 @@
                 background: rgba(20, 120, 70, 0.85);
                 border-color: rgba(80, 255, 160, 0.15);
             }
+            .toast.warning {
+                background: rgba(180, 130, 30, 0.85);
+                border-color: rgba(255, 200, 80, 0.15);
+            }
 
             @media (max-width: 640px) {
                 .app {
@@ -362,7 +374,9 @@
                 let recognition = null;
                 let transcript = "";
                 let finalTranscript = "";
-                let shouldRestart = false;
+                let reconnectTimer = null;
+                let isReconnecting = false;
+                let isStoppedByUser = false;
 
                 // ===== UTILIDADES =====
                 function showToast(msg, type = "info", duration = 3500) {
@@ -370,6 +384,7 @@
                     toast.className = "toast";
                     if (type === "error") toast.classList.add("error");
                     if (type === "success") toast.classList.add("success");
+                    if (type === "warning") toast.classList.add("warning");
                     toast.classList.add("visible");
                     clearTimeout(toast._hideTimer);
                     toast._hideTimer = setTimeout(() => {
@@ -511,54 +526,40 @@
                     }
                 }
 
-                // ===== INICIAR/DETENER GRABACIÓN =====
-                function toggleRecording() {
-                    if (micBtn.disabled) {
-                        showToast(
-                            "El micrófono no está disponible",
-                            "error",
-                            3000,
-                        );
-                        return;
-                    }
-
-                    if (isRecording) {
-                        // Detener grabación manualmente
-                        if (recognition) {
-                            recognition.stop();
-                            // Marcamos que es un stop manual, no un error
-                            shouldRestart = false;
-                        }
-                        return;
-                    }
-
-                    // Iniciar grabación
-                    startRecognition();
-                }
-
+                // ===== FUNCIONES DE RECONOCIMIENTO =====
                 function startRecognition() {
+                    if (isReconnecting) {
+                        // Evitar múltiples reconexiones
+                        return;
+                    }
+
                     try {
                         const SpeechRecognition =
                             window.SpeechRecognition ||
                             window.webkitSpeechRecognition;
                         recognition = new SpeechRecognition();
                         recognition.lang = "es-ES";
-                        recognition.continuous = true; // <-- CRUCIAL: no se detiene por silencio
+                        recognition.continuous = true;
                         recognition.interimResults = true;
                         recognition.maxAlternatives = 1;
 
                         recognition.onstart = () => {
                             isRecording = true;
+                            isReconnecting = false;
+                            isStoppedByUser = false;
+                            micBtn.classList.remove("reconnecting");
                             micBtn.classList.add("recording");
                             micBtn.textContent = "⏹️";
                             micStatus.textContent = "🎙️ Grabando… (habla sin pausa)";
                             micStatus.className = "mic-status recording";
-                            transcript = "";
-                            finalTranscript = "";
-                            transcriptArea.classList.remove("visible");
-                            transcriptContent.textContent = "";
-                            nextBtnContainer.classList.remove("visible");
-                            showToast("🎤 Grabando...", "info", 2000);
+                            if (reconnectTimer) {
+                                clearTimeout(reconnectTimer);
+                                reconnectTimer = null;
+                            }
+                            // No mostrar toast de inicio si es reconexión
+                            if (!isReconnecting) {
+                                showToast("🎤 Grabando...", "info", 2000);
+                            }
                         };
 
                         recognition.onresult = (event) => {
@@ -572,7 +573,6 @@
                                     interim += part;
                                 }
                             }
-                            // Acumular finales
                             if (final) {
                                 finalTranscript += final + " ";
                             }
@@ -581,7 +581,6 @@
                                 transcriptArea.classList.add("visible");
                                 transcriptContent.textContent = displayText;
                             }
-                            // Guardar el último transcript completo
                             transcript = finalTranscript + interim;
                         };
 
@@ -595,6 +594,7 @@
                                 );
                                 micStatus.textContent = "🚫 Permiso denegado";
                                 micStatus.className = "mic-status error";
+                                resetUI();
                             } else if (event.error === "no-speech") {
                                 // No hacer nada, con continuous:true se reinicia solo
                                 // pero podemos mostrar un aviso sutil
@@ -607,12 +607,33 @@
                                 );
                                 resetUI();
                             } else if (event.error === "network") {
-                                showToast(
-                                    "❌ Error de red, intenta de nuevo",
-                                    "error",
-                                    4000,
-                                );
-                                resetUI();
+                                // Error de red: intentar reconectar automáticamente
+                                if (!isStoppedByUser && !isReconnecting) {
+                                    showToast(
+                                        "🔄 Error de red. Reconectando...",
+                                        "warning",
+                                        2000,
+                                    );
+                                    micStatus.textContent = "🔄 Reconectando...";
+                                    micStatus.className = "mic-status reconnecting";
+                                    micBtn.classList.add("reconnecting");
+                                    isReconnecting = true;
+                                    if (reconnectTimer) clearTimeout(reconnectTimer);
+                                    reconnectTimer = setTimeout(() => {
+                                        // Intentar reiniciar el reconocimiento
+                                        if (recognition) {
+                                            try {
+                                                recognition.abort();
+                                            } catch (e) {}
+                                            recognition = null;
+                                        }
+                                        // Reiniciar
+                                        isRecording = false; // para que startRecognition lo inicie de nuevo
+                                        startRecognition();
+                                    }, 1000);
+                                } else {
+                                    // Si ya estamos reconectando, no hacer nada
+                                }
                             } else {
                                 showToast(
                                     `❌ Error: ${event.error}`,
@@ -624,25 +645,36 @@
                         };
 
                         recognition.onend = () => {
-                            // El reconocimiento se detuvo (por error o porque llamamos a stop())
-                            if (isRecording) {
-                                // Si aún estamos en estado de grabación, significa que se detuvo inesperadamente
-                                // y queremos reiniciarlo (a menos que sea un stop manual)
-                                if (shouldRestart) {
-                                    // Reiniciar automáticamente para continuar escuchando
-                                    startRecognition();
-                                } else {
-                                    // Stop manual: procesar el resultado
-                                    handleStop();
+                            // Si la grabación terminó y no fue por stop manual ni por reconexión
+                            if (isRecording && !isStoppedByUser && !isReconnecting) {
+                                // Podría ser un final inesperado, intentar reiniciar
+                                if (!isReconnecting) {
+                                    showToast("🔄 Reiniciando reconocimiento...", "warning", 1500);
+                                    micStatus.textContent = "🔄 Reconectando...";
+                                    micStatus.className = "mic-status reconnecting";
+                                    micBtn.classList.add("reconnecting");
+                                    isReconnecting = true;
+                                    if (reconnectTimer) clearTimeout(reconnectTimer);
+                                    reconnectTimer = setTimeout(() => {
+                                        if (recognition) {
+                                            try {
+                                                recognition.abort();
+                                            } catch (e) {}
+                                            recognition = null;
+                                        }
+                                        isRecording = false;
+                                        startRecognition();
+                                    }, 500);
                                 }
+                            } else if (isStoppedByUser) {
+                                // Detenido por el usuario: mostrar resultado
+                                handleStop();
                             } else {
-                                // No estábamos grabando, no hacer nada
+                                // Otros casos (error o final normal)
                                 resetUI();
                             }
                         };
 
-                        // Permitir reinicio automático en caso de que se detenga por error sin ser manual
-                        shouldRestart = true;
                         recognition.start();
                     } catch (err) {
                         console.error("Error al iniciar reconocimiento:", err);
@@ -655,26 +687,55 @@
                     }
                 }
 
+                function toggleRecording() {
+                    if (micBtn.disabled) {
+                        showToast(
+                            "El micrófono no está disponible",
+                            "error",
+                            3000,
+                        );
+                        return;
+                    }
+
+                    if (isRecording) {
+                        // Detener grabación manualmente
+                        isStoppedByUser = true;
+                        if (recognition) {
+                            recognition.stop();
+                        }
+                        // Limpiar cualquier reconexión pendiente
+                        if (reconnectTimer) {
+                            clearTimeout(reconnectTimer);
+                            reconnectTimer = null;
+                        }
+                        isReconnecting = false;
+                        micBtn.classList.remove("reconnecting");
+                        return;
+                    }
+
+                    // Iniciar grabación (si no está ya en curso)
+                    if (!isRecording && !isReconnecting) {
+                        startRecognition();
+                    }
+                }
+
                 function handleStop() {
-                    // Detener manual
                     isRecording = false;
-                    micBtn.classList.remove("recording");
+                    isStoppedByUser = false;
+                    micBtn.classList.remove("recording", "reconnecting");
                     micBtn.textContent = "🎤";
                     micStatus.textContent = "⏹️ Grabación detenida";
                     micStatus.className = "mic-status done";
 
-                    // Mostrar transcripción final
                     if (transcript.trim()) {
                         transcriptArea.classList.add("visible");
                         transcriptContent.textContent = transcript.trim();
-                        // Mostrar botón Siguiente
                         nextBtnContainer.classList.add("visible");
                         showToast("✅ Grabación finalizada", "success", 2000);
                     } else {
                         showToast("No se captó ninguna palabra", "error", 3000);
                         resetUI();
                     }
-                    // Limpiar referencia
                     if (recognition) {
                         try {
                             recognition.abort();
@@ -685,13 +746,19 @@
 
                 function resetUI() {
                     isRecording = false;
-                    micBtn.classList.remove("recording");
+                    isReconnecting = false;
+                    isStoppedByUser = false;
+                    micBtn.classList.remove("recording", "reconnecting");
                     micBtn.textContent = "🎤";
                     if (recognition) {
                         try {
                             recognition.abort();
                         } catch (e) {}
                         recognition = null;
+                    }
+                    if (reconnectTimer) {
+                        clearTimeout(reconnectTimer);
+                        reconnectTimer = null;
                     }
                     if (
                         !micStatus.classList.contains("done") &&
@@ -700,7 +767,6 @@
                         micStatus.textContent = "Toca el micrófono para empezar";
                         micStatus.className = "mic-status";
                     }
-                    // Si se resetea, ocultar botón siguiente
                     nextBtnContainer.classList.remove("visible");
                 }
 
@@ -720,7 +786,6 @@
                                 "success",
                                 3000,
                             );
-                            // Abrir Gemini
                             openGemini();
                         })
                         .catch((err) => {
@@ -736,7 +801,7 @@
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v3.0 (grabación continua + botón Siguiente)");
+                console.log("🎙️ ideas app v4.0 (reconexión automática en errores de red)");
             })();
         </script>
     </body>
