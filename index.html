@@ -419,10 +419,45 @@
                 }
 
                 function openGemini() {
-                    // Para iPhone, el enlace https://gemini.google.com/ es un enlace universal
-                    // que abre la app si está instalada, o la web en caso contrario.
-                    // En otros dispositivos, simplemente abre la web en una nueva pestaña.
-                    window.open("https://gemini.google.com/", "_blank");
+                    const isIPhone = /iPhone/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
+                    if (isIPhone) {
+                        // En iPhone, intentamos abrir el esquema universal "gemini://"
+                        // que debería lanzar la app nativa si está instalada.
+                        // Si no responde en 1 segundo, abrimos la web como fallback.
+                        const appScheme = "gemini://";
+                        const webUrl = "https://gemini.google.com/";
+
+                        // Intentamos abrir la app mediante un iframe (método común)
+                        const iframe = document.createElement("iframe");
+                        iframe.style.display = "none";
+                        iframe.src = appScheme;
+                        document.body.appendChild(iframe);
+
+                        // Si después de 1.2 segundos la app no se abrió, abrimos la web
+                        const timer = setTimeout(() => {
+                            window.open(webUrl, "_blank");
+                            document.body.removeChild(iframe);
+                        }, 1200);
+
+                        // Si la app se abre, el navegador puede perder el foco (blur)
+                        // o el iframe puede no llegar a cargarse. Limpiamos.
+                        const onBlur = () => {
+                            clearTimeout(timer);
+                            document.body.removeChild(iframe);
+                            window.removeEventListener("blur", onBlur);
+                        };
+                        window.addEventListener("blur", onBlur);
+                        // También limpiar después de 2 segundos por si acaso
+                        setTimeout(() => {
+                            if (document.body.contains(iframe)) {
+                                document.body.removeChild(iframe);
+                            }
+                            window.removeEventListener("blur", onBlur);
+                        }, 3000);
+                    } else {
+                        // Resto de dispositivos: abrir web en nueva pestaña
+                        window.open("https://gemini.google.com/", "_blank");
+                    }
                 }
 
                 // ===== DETECCIÓN DE ENTORNO =====
@@ -551,24 +586,15 @@
                         };
 
                         recognition.onerror = (event) => {
-                            console.error("❌ Speech error:", event);
-                            // Log adicional para depuración en Firefox/Zen
-                            console.log("Error details:", {
-                                error: event.error,
-                                message: event.message || "No message",
-                                target: event.target,
-                                type: event.type
-                            });
-                            
+                            console.error("Speech error:", event.error);
                             let errorMsg = event.error;
                             if (errorMsg === "network") {
-                                // Mostrar mensaje detallado
                                 showToast(
-                                    "⚠️ Error de red (posible bloqueo de la API de Google). Reintenta manualmente.",
+                                    "⚠️ Error de red. Reintenta manualmente.",
                                     "warning",
-                                    6000,
+                                    5000,
                                 );
-                                micStatus.textContent = "⚠️ Error de red (revisa conexión)";
+                                micStatus.textContent = "⚠️ Error de red";
                                 micStatus.className = "mic-status error";
                                 micBtn.classList.remove("recording");
                                 micBtn.classList.add("error-state");
@@ -578,6 +604,8 @@
                                 if (finalTranscript.trim()) {
                                     transcriptArea.classList.add("visible");
                                     transcriptContent.textContent = finalTranscript.trim();
+                                    // Habilitar "Siguiente" si hay texto parcial
+                                    nextBtnContainer.classList.add("visible");
                                 }
                             } else if (errorMsg === "not-allowed") {
                                 showToast(
@@ -609,7 +637,6 @@
 
                         recognition.onend = () => {
                             if (isRecording && !isStoppedByUser) {
-                                // Si terminó inesperadamente y no fue por el usuario
                                 if (!micBtn.classList.contains("error-state")) {
                                     showToast(
                                         "⚠️ La grabación se detuvo inesperadamente. Reintenta.",
@@ -626,6 +653,7 @@
                                     if (finalTranscript.trim()) {
                                         transcriptArea.classList.add("visible");
                                         transcriptContent.textContent = finalTranscript.trim();
+                                        nextBtnContainer.classList.add("visible");
                                     }
                                 }
                             } else if (isStoppedByUser) {
@@ -637,7 +665,7 @@
 
                         recognition.start();
                     } catch (err) {
-                        console.error("❌ Error al iniciar reconocimiento:", err);
+                        console.error("Error al iniciar reconocimiento:", err);
                         showToast(
                             "❌ Error al iniciar el micrófono: " + err.message,
                             "error",
@@ -658,7 +686,6 @@
                     }
 
                     if (micBtn.classList.contains("error-state")) {
-                        // Limpiar estado de error y volver a empezar
                         resetUI();
                         startRecognition();
                         return;
@@ -764,7 +791,7 @@
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v5.1 (logs detallados + enlace universal para iPhone)");
+                console.log("🎙️ ideas app v6.0 (soporte iPhone nativo)");
             })();
         </script>
     </body>
