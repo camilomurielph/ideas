@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ideas · ordena tu voz</title>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Germania+One&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            /* ========== RESET Y BASE ========== */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: #0d0d0d;
+                font-family: "Montserrat", sans-serif;
+                padding: 1.5rem;
+                color: #e0e0e0;
+            }
+
+            /* ========== CONTENEDOR PRINCIPAL ========== */
+            .app {
+                width: 100%;
+                max-width: 600px;
+                background: rgba(255, 255, 255, 0.03);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 28px;
+                padding: 2.5rem 2.2rem 2.5rem;
+                box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.9);
+                text-align: center;
+                transition: all 0.4s ease;
+                margin: 0 auto;
+            }
+
+            /* ========== HEADER ========== */
+            .app-header {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 1.8rem;
+            }
+            .app-header h1 {
+                font-size: 2.2rem;
+                font-weight: 600;
+                color: #f0f6fc;
+                letter-spacing: -0.02em;
+            }
+
+            /* ========== BOTÓN DE MICRÓFONO ========== */
+            .mic-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1.5rem;
+                margin: 1.5rem 0;
+            }
+
+            .mic-btn {
+                width: 140px;
+                height: 140px;
+                border-radius: 50%;
+                border: none;
+                background: linear-gradient(135deg, #1a5cff, #7c3aed);
+                color: white;
+                font-size: 4rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 8px 32px rgba(26, 92, 255, 0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+            .mic-btn:hover:not(:disabled) {
+                transform: scale(1.05);
+                box-shadow: 0 12px 40px rgba(26, 92, 255, 0.5);
+            }
+            .mic-btn:active:not(:disabled) {
+                transform: scale(0.95);
+            }
+            .mic-btn.recording {
+                background: linear-gradient(135deg, #ff4a4a, #d32f2f);
+                box-shadow: 0 8px 32px rgba(255, 60, 60, 0.4);
+                animation: pulse 1.5s infinite;
+            }
+            .mic-btn.recording:hover:not(:disabled) {
+                box-shadow: 0 12px 40px rgba(255, 60, 60, 0.6);
+            }
+            .mic-btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+                transform: none !important;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.06);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            .mic-status {
+                font-size: 1rem;
+                color: rgba(255, 255, 255, 0.5);
+                min-height: 2rem;
+                font-weight: 400;
+                letter-spacing: 0.3px;
+                max-width: 100%;
+                word-wrap: break-word;
+            }
+            .mic-status.recording {
+                color: #ff6b6b;
+            }
+            .mic-status.done {
+                color: #4adc78;
+            }
+            .mic-status.error {
+                color: #ff6b6b;
+            }
+            .mic-status.info {
+                color: #4a8cff;
+            }
+            .mic-status.small {
+                font-size: 0.85rem;
+                opacity: 0.7;
+            }
+
+            /* ========== ÁREA DE TRANSCRIPCIÓN ========== */
+            .transcript-area {
+                margin-top: 1.5rem;
+                padding: 1rem;
+                background: rgba(255, 255, 255, 0.02);
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+                display: none;
+                text-align: left;
+            }
+            .transcript-area.visible {
+                display: block;
+            }
+            .transcript-area .label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: rgba(255, 255, 255, 0.2);
+                margin-bottom: 0.3rem;
+            }
+            .transcript-area .content {
+                font-size: 0.95rem;
+                line-height: 1.6;
+                color: #e0e0e0;
+                max-height: 200px;
+                overflow-y: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            .transcript-area .content::-webkit-scrollbar {
+                width: 4px;
+            }
+            .transcript-area .content::-webkit-scrollbar-thumb {
+                background: #4a8cff;
+                border-radius: 10px;
+            }
+
+            /* ========== FOOTER ========== */
+            .app-footer {
+                margin-top: 2.5rem;
+                text-align: center;
+                font-size: 0.75rem;
+                color: rgba(255, 255, 255, 0.2);
+                transition: opacity 0.4s ease;
+            }
+            .app-footer a {
+                color: rgba(255, 255, 255, 0.25);
+                text-decoration: none;
+                transition: color 0.3s ease;
+            }
+            .app-footer a:hover {
+                color: rgba(255, 255, 255, 0.5);
+            }
+
+            /* ========== TOAST ========== */
+            .toast {
+                position: fixed;
+                bottom: 2rem;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.85);
+                backdrop-filter: blur(12px);
+                color: #f0f6fc;
+                padding: 0.7rem 2rem;
+                border-radius: 60px;
+                font-weight: 500;
+                font-size: 0.9rem;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 999;
+                max-width: 90%;
+            }
+            .toast.visible {
+                opacity: 1;
+            }
+            .toast.error {
+                background: rgba(180, 30, 30, 0.85);
+                border-color: rgba(255, 80, 80, 0.15);
+            }
+            .toast.success {
+                background: rgba(20, 120, 70, 0.85);
+                border-color: rgba(80, 255, 160, 0.15);
+            }
+
+            /* ========== BOTÓN DE AYUDA / COMPROBAR ========== */
+            .help-link {
+                display: inline-block;
+                margin-top: 0.8rem;
+                color: #4a8cff;
+                text-decoration: underline dotted;
+                cursor: pointer;
+                font-size: 0.85rem;
+                transition: color 0.3s ease;
+            }
+            .help-link:hover {
+                color: #8bb4ff;
+            }
+
+            @media (max-width: 640px) {
+                .app {
+                    padding: 1.5rem 1.2rem;
+                }
+                .app-header h1 {
+                    font-size: 1.6rem;
+                }
+                .mic-btn {
+                    width: 110px;
+                    height: 110px;
+                    font-size: 3rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app" id="app">
+            <header class="app-header">
+                <h1>🎙️ ideas</h1>
+            </header>
+
+            <div class="mic-container">
+                <button class="mic-btn" id="micBtn" title="Grabar / Detener">
+                    🎤
+                </button>
+                <div class="mic-status" id="micStatus">
+                    Toca el micrófono para empezar
+                </div>
+                <div class="mic-status small" id="helpText"></div>
+            </div>
+
+            <!-- Área de transcripción -->
+            <div class="transcript-area" id="transcriptArea">
+                <div class="label">📝 Transcripción</div>
+                <div class="content" id="transcriptContent"></div>
+            </div>
+
+            <div class="app-footer">
+                <a href="https://camilomurielph.github.io/" target="_blank"
+                    >App por Camilomuriel</a
+                >
+            </div>
+        </div>
+
+        <div id="toast" class="toast"></div>
+
+        <script>
+            (function () {
+                "use strict";
+
+                // ===== DOM REFS =====
+                const micBtn = document.getElementById("micBtn");
+                const micStatus = document.getElementById("micStatus");
+                const helpText = document.getElementById("helpText");
+                const transcriptArea =
+                    document.getElementById("transcriptArea");
+                const transcriptContent =
+                    document.getElementById("transcriptContent");
+                const toast = document.getElementById("toast");
+
+                // ===== PROMPT =====
+                const PROMPT = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
+
+
+                Reglas estrictas que debes seguir:
+
+                1. Formato de salida: Devuelve ÚNICAMENTE un bloque de código en Markdown (\`\`\`markdown ... \`\`\`). No escribas absolutamente nada fuera de este bloque.
+
+                2. Título: Genera un título concreto y coherente que refleje fielmente el tema central de mi idea. Que sea descriptivo, no comercial.
+
+                3. Estructura libre y adaptable: NO uses plantillas rígidas como "Visión Ejecutiva", "Desglose Conceptual" o "Próximos pasos" a menos que encajen naturalmente. En su lugar, observa la naturaleza de lo que te cuento (puede ser una app, un proyecto, un video, una reflexión filosófica, un problema personal, etc.) y **elige la estructura que mejor le siente**. Usa los títulos de sección (##) que creas convenientes para darle coherencia, pero si la idea es sencilla, incluso puedes prescindir de ellos y usar solo párrafos y viñetas sueltas.
+
+                4. Adaptación al tamaño: Si mi transcripción es corta y simple, devuélveme un desarrollo breve y conciso, solo lo justo para que se entienda mejor que como lo dije. Si es compleja y larga, profundiza y divídela en más partes. La longitud final debe ser proporcional a la complejidad de lo que he dicho. No alargues ni recortes artificialmente.
+
+                5. Fidelidad absoluta: No inventes cosas que no he dicho, no cambies el enfoque ni le des un giro "cool" o "comercial" a mi idea. Tu trabajo es pulir y ordenar, no reescribir. Si hay vacíos lógicos, puedes rellenarlos solo si son evidentes y necesarios para la coherencia, pero siempre manteniendo mi intención original.
+
+
+                Al final de todo el desarrollo, y **solo al final**, añade una sección llamada "Otras perspectivas y mejoras". Aquí sí quiero que te tomes libertades constructivas. Sugiere 2 o 3 formas alternativas de abordar la idea, pequeños ajustes que no haya considerado, preguntas clave que debería hacerme, o herramientas/recursos que podrían ayudarme a profundizar. Esta sección debe ser breve y en tono de sugerencia, no de orden.
+
+
+                Transcripción:`;
+
+                // ===== ESTADO =====
+                let isRecording = false;
+                let recognition = null;
+                let transcript = "";
+
+                // ===== UTILIDADES =====
+                function showToast(msg, type = "info", duration = 3500) {
+                    toast.textContent = msg;
+                    toast.className = "toast";
+                    if (type === "error") toast.classList.add("error");
+                    if (type === "success") toast.classList.add("success");
+                    toast.classList.add("visible");
+                    clearTimeout(toast._hideTimer);
+                    toast._hideTimer = setTimeout(() => {
+                        toast.classList.remove("visible");
+                    }, duration);
+                }
+
+                function copyToClipboard(text) {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        return navigator.clipboard.writeText(text);
+                    } else {
+                        return new Promise((resolve, reject) => {
+                            try {
+                                const textarea =
+                                    document.createElement("textarea");
+                                textarea.value = text;
+                                textarea.style.position = "fixed";
+                                textarea.style.left = "-9999px";
+                                textarea.style.top = "0";
+                                document.body.appendChild(textarea);
+                                textarea.select();
+                                document.execCommand("copy");
+                                document.body.removeChild(textarea);
+                                resolve();
+                            } catch (err) {
+                                reject(err);
+                            }
+                        });
+                    }
+                }
+
+                function openGemini() {
+                    window.open("https://gemini.google.com/", "_blank");
+                }
+
+                // ===== DETECCIÓN DE ENTORNO =====
+                function checkEnvironment() {
+                    const isLocalFile = window.location.protocol === "file:";
+                    const isFirefox =
+                        navigator.userAgent.toLowerCase().indexOf("firefox") >
+                        -1;
+                    const isChrome =
+                        navigator.userAgent.toLowerCase().indexOf("chrome") >
+                            -1 &&
+                        navigator.userAgent.toLowerCase().indexOf("edge") ===
+                            -1;
+                    const isEdge =
+                        navigator.userAgent.toLowerCase().indexOf("edge") > -1;
+                    const isSafari =
+                        navigator.userAgent.toLowerCase().indexOf("safari") >
+                            -1 &&
+                        navigator.userAgent.toLowerCase().indexOf("chrome") ===
+                            -1;
+
+                    const SpeechRecognition =
+                        window.SpeechRecognition ||
+                        window.webkitSpeechRecognition;
+
+                    // Mensajes de ayuda
+                    let helpMsg = "";
+                    let isSupported = true;
+
+                    if (isLocalFile) {
+                        helpMsg =
+                            "⚠️ Archivo local. Para usar el micrófono, sirve la página con un servidor local (ej. Live Server, python -m http.server).";
+                        isSupported = false;
+                    } else if (isFirefox) {
+                        // Firefox requiere preferencia
+                        if (!SpeechRecognition) {
+                            helpMsg =
+                                "🦊 Firefox: activa 'media.webspeech.recognition.enable' en about:config o usa Chrome/Edge.";
+                            isSupported = false;
+                        } else {
+                            helpMsg =
+                                "🦊 Firefox detectado. Si falla, revisa about:config.";
+                        }
+                    } else if (isSafari) {
+                        // Safari soporta webkitSpeechRecognition en versiones recientes (14+)
+                        if (!SpeechRecognition) {
+                            helpMsg =
+                                "🍎 Safari: actualiza a la última versión o usa Chrome.";
+                            isSupported = false;
+                        } else {
+                            helpMsg =
+                                "🍎 Safari detectado. Asegúrate de dar permisos.";
+                        }
+                    } else if (isChrome || isEdge) {
+                        if (
+                            window.location.protocol === "https:" ||
+                            window.location.hostname === "localhost" ||
+                            window.location.hostname === "127.0.0.1"
+                        ) {
+                            helpMsg = "✅ Entorno seguro, todo listo.";
+                        } else {
+                            helpMsg =
+                                "⚠️ No estás en HTTPS o localhost. Algunos navegadores pueden bloquear el micrófono.";
+                        }
+                    } else {
+                        // Otros navegadores
+                        if (!SpeechRecognition) {
+                            helpMsg =
+                                "❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari.";
+                            isSupported = false;
+                        }
+                    }
+
+                    if (helpMsg) {
+                        helpText.textContent = helpMsg;
+                    }
+
+                    return { isSupported, helpMsg };
+                }
+
+                // ===== INICIALIZACIÓN =====
+                function initSpeech() {
+                    const { isSupported, helpMsg } = checkEnvironment();
+                    const SpeechRecognition =
+                        window.SpeechRecognition ||
+                        window.webkitSpeechRecognition;
+
+                    if (!SpeechRecognition) {
+                        micBtn.disabled = true;
+                        micStatus.textContent =
+                            "❌ Reconocimiento de voz no disponible";
+                        micStatus.className = "mic-status error";
+                        showToast(
+                            "Usa Chrome, Edge o Safari (o activa la preferencia en Firefox)",
+                            "error",
+                            6000,
+                        );
+                        return;
+                    }
+
+                    if (!isSupported) {
+                        micBtn.disabled = true;
+                        micStatus.textContent = "⚠️ Configuración pendiente";
+                        micStatus.className = "mic-status error";
+                        if (helpMsg) {
+                            showToast(helpMsg, "error", 6000);
+                        }
+                        return;
+                    }
+
+                    // Todo correcto
+                    micBtn.disabled = false;
+                    micStatus.textContent = "Toca el micrófono para empezar";
+                    micStatus.className = "mic-status";
+                    if (helpMsg && !helpMsg.includes("✅")) {
+                        // Mostrar ayuda no crítica
+                        helpText.textContent = helpMsg;
+                    }
+                }
+
+                // ===== INICIAR GRABACIÓN =====
+                function startRecording() {
+                    if (micBtn.disabled) {
+                        showToast(
+                            "El micrófono no está disponible",
+                            "error",
+                            3000,
+                        );
+                        return;
+                    }
+
+                    if (isRecording) {
+                        if (recognition) {
+                            recognition.stop();
+                        }
+                        return;
+                    }
+
+                    try {
+                        const SpeechRecognition =
+                            window.SpeechRecognition ||
+                            window.webkitSpeechRecognition;
+                        recognition = new SpeechRecognition();
+                        recognition.lang = "es-ES";
+                        recognition.continuous = false;
+                        recognition.interimResults = true;
+                        recognition.maxAlternatives = 1;
+
+                        recognition.onstart = () => {
+                            isRecording = true;
+                            micBtn.classList.add("recording");
+                            micBtn.textContent = "⏹️";
+                            micStatus.textContent = "🎙️ Grabando… habla ahora";
+                            micStatus.className = "mic-status recording";
+                            transcript = "";
+                            transcriptArea.classList.remove("visible");
+                            transcriptContent.textContent = "";
+                            showToast("🎤 Grabando...", "info", 2000);
+                        };
+
+                        recognition.onresult = (event) => {
+                            let interim = "";
+                            let final = "";
+                            for (
+                                let i = event.resultIndex;
+                                i < event.results.length;
+                                i++
+                            ) {
+                                const part = event.results[i][0].transcript;
+                                if (event.results[i].isFinal) {
+                                    final += part;
+                                } else {
+                                    interim += part;
+                                }
+                            }
+                            const displayText = final + interim;
+                            if (displayText.trim()) {
+                                transcriptArea.classList.add("visible");
+                                transcriptContent.textContent = displayText;
+                            }
+                            if (final) {
+                                transcript = final;
+                            }
+                        };
+
+                        recognition.onerror = (event) => {
+                            console.error("Speech error:", event.error);
+                            if (event.error === "not-allowed") {
+                                showToast(
+                                    "❌ Permiso denegado. Concede acceso al micrófono.",
+                                    "error",
+                                    5000,
+                                );
+                                micStatus.textContent = "🚫 Permiso denegado";
+                                micStatus.className = "mic-status error";
+                            } else if (event.error === "no-speech") {
+                                showToast(
+                                    "🔇 No se detectó voz",
+                                    "error",
+                                    3000,
+                                );
+                            } else if (event.error === "audio-capture") {
+                                showToast(
+                                    "❌ No se pudo acceder al micrófono. ¿Está conectado?",
+                                    "error",
+                                    4000,
+                                );
+                            } else if (event.error === "network") {
+                                showToast(
+                                    "❌ Error de red, intenta de nuevo",
+                                    "error",
+                                    4000,
+                                );
+                            } else {
+                                showToast(
+                                    `❌ Error: ${event.error}`,
+                                    "error",
+                                    4000,
+                                );
+                            }
+                            resetUI();
+                        };
+
+                        recognition.onend = () => {
+                            if (isRecording) {
+                                if (transcript.trim()) {
+                                    transcriptArea.classList.add("visible");
+                                    transcriptContent.textContent = transcript;
+                                    micStatus.textContent =
+                                        "✅ Transcripción completada";
+                                    micStatus.className = "mic-status done";
+                                    // Procesar
+                                    const fullText =
+                                        PROMPT + "\n\n" + transcript.trim();
+                                    copyToClipboard(fullText)
+                                        .then(() => {
+                                            showToast(
+                                                "✅ Prompt copiado al portapapeles",
+                                                "success",
+                                                3500,
+                                            );
+                                            openGemini();
+                                        })
+                                        .catch((err) => {
+                                            console.error(
+                                                "Error al copiar:",
+                                                err,
+                                            );
+                                            showToast(
+                                                "❌ No se pudo copiar",
+                                                "error",
+                                                4000,
+                                            );
+                                        });
+                                } else {
+                                    showToast(
+                                        "No se captó ninguna palabra",
+                                        "error",
+                                        3000,
+                                    );
+                                }
+                                resetUI();
+                            }
+                        };
+
+                        recognition.start();
+                    } catch (err) {
+                        console.error("Error al iniciar reconocimiento:", err);
+                        showToast(
+                            "❌ Error al iniciar el micrófono: " + err.message,
+                            "error",
+                            4000,
+                        );
+                        resetUI();
+                    }
+                }
+
+                function resetUI() {
+                    isRecording = false;
+                    micBtn.classList.remove("recording");
+                    micBtn.textContent = "🎤";
+                    if (recognition) {
+                        try {
+                            recognition.abort();
+                        } catch (e) {}
+                        recognition = null;
+                    }
+                    if (
+                        !micStatus.classList.contains("done") &&
+                        !micStatus.classList.contains("error")
+                    ) {
+                        micStatus.textContent =
+                            "Toca el micrófono para empezar";
+                        micStatus.className = "mic-status";
+                    }
+                }
+
+                // ===== EVENTOS =====
+                micBtn.addEventListener("click", startRecording);
+
+                // ===== INICIALIZACIÓN =====
+                initSpeech();
+                showToast("Presiona el micrófono para empezar", "info", 3000);
+                console.log("🎙️ ideas app v2.1 (diagnóstico mejorado)");
+            })();
+        </script>
+    </body>
+</html>
