@@ -224,6 +224,39 @@
                 transform: scale(0.95);
             }
 
+            /* ========== BOTÓN REINTENTAR ========== */
+            .retry-container {
+                margin-top: 1rem;
+                display: none;
+                justify-content: center;
+            }
+            .retry-container.visible {
+                display: flex;
+            }
+            .btn-retry {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.6rem 1.8rem;
+                border: none;
+                border-radius: 60px;
+                font-family: "Montserrat", sans-serif;
+                font-weight: 500;
+                font-size: 0.9rem;
+                background: linear-gradient(135deg, #f59e0b, #d97706);
+                color: white;
+                box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+            .btn-retry:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 28px rgba(245, 158, 11, 0.5);
+            }
+            .btn-retry:active {
+                transform: scale(0.95);
+            }
+
             /* ========== FOOTER ========== */
             .app-footer {
                 margin-top: 2.5rem;
@@ -322,6 +355,13 @@
                 </button>
             </div>
 
+            <!-- Botón Reintentar (para errores de red) -->
+            <div class="retry-container" id="retryContainer">
+                <button class="btn-retry" id="retryBtn">
+                    🔄 Reintentar
+                </button>
+            </div>
+
             <div class="app-footer">
                 <a href="https://camilomurielph.github.io/" target="_blank"
                     >App por Camilomuriel</a
@@ -345,6 +385,8 @@
                 const nextBtnContainer =
                     document.getElementById("nextBtnContainer");
                 const nextBtn = document.getElementById("nextBtn");
+                const retryContainer = document.getElementById("retryContainer");
+                const retryBtn = document.getElementById("retryBtn");
                 const toast = document.getElementById("toast");
 
                 // ===== PROMPT =====
@@ -374,8 +416,6 @@
                 let recognition = null;
                 let transcript = "";
                 let finalTranscript = "";
-                let reconnectTimer = null;
-                let isReconnecting = false;
                 let isStoppedByUser = false;
 
                 // ===== UTILIDADES =====
@@ -417,7 +457,33 @@
                 }
 
                 function openGemini() {
-                    window.open("https://gemini.google.com/", "_blank");
+                    // Detectar si es iPhone/iOS
+                    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        // Intentar abrir la app de Gemini usando el esquema gemini://
+                        // Si falla, abrir la web después de un tiempo
+                        const geminiUrl = "gemini://";
+                        const webUrl = "https://gemini.google.com/";
+                        // Intentar abrir la app
+                        const win = window.open(geminiUrl, "_blank");
+                        // Si no se puede abrir, redirigir a la web después de 500ms
+                        if (win) {
+                            // Algunos navegadores bloquean la apertura, mejor usar location.href
+                            // Pero location.href cambiaría la página actual, no queremos eso.
+                            // Usamos un intento con un timeout para abrir la web si no se abre la app.
+                            setTimeout(() => {
+                                // Si la ventana no se ha cerrado, asumimos que no se abrió la app
+                                // Abrir la web en la misma ventana o nueva
+                                window.location.href = webUrl;
+                            }, 1000);
+                        } else {
+                            // Si no se pudo abrir, ir a la web
+                            window.location.href = webUrl;
+                        }
+                    } else {
+                        // Resto de dispositivos: abrir web
+                        window.open("https://gemini.google.com/", "_blank");
+                    }
                 }
 
                 // ===== DETECCIÓN DE ENTORNO =====
@@ -528,11 +594,6 @@
 
                 // ===== FUNCIONES DE RECONOCIMIENTO =====
                 function startRecognition() {
-                    if (isReconnecting) {
-                        // Evitar múltiples reconexiones
-                        return;
-                    }
-
                     try {
                         const SpeechRecognition =
                             window.SpeechRecognition ||
@@ -545,21 +606,15 @@
 
                         recognition.onstart = () => {
                             isRecording = true;
-                            isReconnecting = false;
                             isStoppedByUser = false;
                             micBtn.classList.remove("reconnecting");
                             micBtn.classList.add("recording");
                             micBtn.textContent = "⏹️";
                             micStatus.textContent = "🎙️ Grabando… (habla sin pausa)";
                             micStatus.className = "mic-status recording";
-                            if (reconnectTimer) {
-                                clearTimeout(reconnectTimer);
-                                reconnectTimer = null;
-                            }
-                            // No mostrar toast de inicio si es reconexión
-                            if (!isReconnecting) {
-                                showToast("🎤 Grabando...", "info", 2000);
-                            }
+                            // Ocultar botón de reintentar si estaba visible
+                            retryContainer.classList.remove("visible");
+                            showToast("🎤 Grabando...", "info", 2000);
                         };
 
                         recognition.onresult = (event) => {
@@ -607,33 +662,18 @@
                                 );
                                 resetUI();
                             } else if (event.error === "network") {
-                                // Error de red: intentar reconectar automáticamente
-                                if (!isStoppedByUser && !isReconnecting) {
-                                    showToast(
-                                        "🔄 Error de red. Reconectando...",
-                                        "warning",
-                                        2000,
-                                    );
-                                    micStatus.textContent = "🔄 Reconectando...";
-                                    micStatus.className = "mic-status reconnecting";
-                                    micBtn.classList.add("reconnecting");
-                                    isReconnecting = true;
-                                    if (reconnectTimer) clearTimeout(reconnectTimer);
-                                    reconnectTimer = setTimeout(() => {
-                                        // Intentar reiniciar el reconocimiento
-                                        if (recognition) {
-                                            try {
-                                                recognition.abort();
-                                            } catch (e) {}
-                                            recognition = null;
-                                        }
-                                        // Reiniciar
-                                        isRecording = false; // para que startRecognition lo inicie de nuevo
-                                        startRecognition();
-                                    }, 1000);
-                                } else {
-                                    // Si ya estamos reconectando, no hacer nada
-                                }
+                                // Error de red: mostrar botón de reintentar
+                                showToast(
+                                    "❌ Error de red. Reintenta manualmente.",
+                                    "error",
+                                    5000,
+                                );
+                                micStatus.textContent = "❌ Error de red";
+                                micStatus.className = "mic-status error";
+                                // Mostrar botón de reintentar
+                                retryContainer.classList.add("visible");
+                                // Detener cualquier grabación en curso
+                                resetUI();
                             } else {
                                 showToast(
                                     `❌ Error: ${event.error}`,
@@ -645,26 +685,19 @@
                         };
 
                         recognition.onend = () => {
-                            // Si la grabación terminó y no fue por stop manual ni por reconexión
-                            if (isRecording && !isStoppedByUser && !isReconnecting) {
-                                // Podría ser un final inesperado, intentar reiniciar
-                                if (!isReconnecting) {
-                                    showToast("🔄 Reiniciando reconocimiento...", "warning", 1500);
-                                    micStatus.textContent = "🔄 Reconectando...";
-                                    micStatus.className = "mic-status reconnecting";
-                                    micBtn.classList.add("reconnecting");
-                                    isReconnecting = true;
-                                    if (reconnectTimer) clearTimeout(reconnectTimer);
-                                    reconnectTimer = setTimeout(() => {
-                                        if (recognition) {
-                                            try {
-                                                recognition.abort();
-                                            } catch (e) {}
-                                            recognition = null;
-                                        }
-                                        isRecording = false;
-                                        startRecognition();
-                                    }, 500);
+                            // Si terminó y no fue por stop manual, y no hay error de red visible
+                            if (isRecording && !isStoppedByUser && !retryContainer.classList.contains("visible")) {
+                                // Podría ser un final inesperado, mostrar opción de reintentar
+                                if (!retryContainer.classList.contains("visible")) {
+                                    showToast(
+                                        "⚠️ La grabación se detuvo inesperadamente.",
+                                        "warning",
+                                        3000,
+                                    );
+                                    micStatus.textContent = "⚠️ Grabación detenida";
+                                    micStatus.className = "mic-status error";
+                                    retryContainer.classList.add("visible");
+                                    resetUI();
                                 }
                             } else if (isStoppedByUser) {
                                 // Detenido por el usuario: mostrar resultado
@@ -703,25 +736,24 @@
                         if (recognition) {
                             recognition.stop();
                         }
-                        // Limpiar cualquier reconexión pendiente
-                        if (reconnectTimer) {
-                            clearTimeout(reconnectTimer);
-                            reconnectTimer = null;
-                        }
-                        isReconnecting = false;
-                        micBtn.classList.remove("reconnecting");
                         return;
                     }
 
                     // Iniciar grabación (si no está ya en curso)
-                    if (!isRecording && !isReconnecting) {
+                    if (!isRecording) {
+                        // Limpiar cualquier estado previo
+                        finalTranscript = "";
+                        transcript = "";
+                        transcriptArea.classList.remove("visible");
+                        transcriptContent.textContent = "";
+                        nextBtnContainer.classList.remove("visible");
+                        retryContainer.classList.remove("visible");
                         startRecognition();
                     }
                 }
 
                 function handleStop() {
                     isRecording = false;
-                    isStoppedByUser = false;
                     micBtn.classList.remove("recording", "reconnecting");
                     micBtn.textContent = "🎤";
                     micStatus.textContent = "⏹️ Grabación detenida";
@@ -746,8 +778,6 @@
 
                 function resetUI() {
                     isRecording = false;
-                    isReconnecting = false;
-                    isStoppedByUser = false;
                     micBtn.classList.remove("recording", "reconnecting");
                     micBtn.textContent = "🎤";
                     if (recognition) {
@@ -756,10 +786,7 @@
                         } catch (e) {}
                         recognition = null;
                     }
-                    if (reconnectTimer) {
-                        clearTimeout(reconnectTimer);
-                        reconnectTimer = null;
-                    }
+                    // No resetear el estado si hay un error de red (se muestra el botón)
                     if (
                         !micStatus.classList.contains("done") &&
                         !micStatus.classList.contains("error")
@@ -767,7 +794,10 @@
                         micStatus.textContent = "Toca el micrófono para empezar";
                         micStatus.className = "mic-status";
                     }
-                    nextBtnContainer.classList.remove("visible");
+                    // Ocultar botón siguiente si no hay transcripción
+                    if (!transcript.trim()) {
+                        nextBtnContainer.classList.remove("visible");
+                    }
                 }
 
                 // ===== MANEJADOR DEL BOTÓN SIGUIENTE =====
@@ -794,14 +824,25 @@
                         });
                 }
 
+                // ===== MANEJADOR DEL BOTÓN REINTENTAR =====
+                function handleRetry() {
+                    // Ocultar botón de reintentar
+                    retryContainer.classList.remove("visible");
+                    // Limpiar estado
+                    resetUI();
+                    // Volver a iniciar grabación
+                    toggleRecording(); // Esto iniciará la grabación si no está en curso
+                }
+
                 // ===== EVENTOS =====
                 micBtn.addEventListener("click", toggleRecording);
                 nextBtn.addEventListener("click", handleNext);
+                retryBtn.addEventListener("click", handleRetry);
 
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v4.0 (reconexión automática en errores de red)");
+                console.log("🎙️ ideas app v5.0 (con reintento manual y soporte iOS)");
             })();
         </script>
     </body>
