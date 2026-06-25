@@ -322,7 +322,6 @@
                 <button class="btn-next" id="nextBtn">➡️ Siguiente</button>
             </div>
 
-            <!-- Botón de reintento (se muestra en error de red) -->
             <div class="next-btn-container" id="retryContainer" style="display: none;">
                 <button class="btn-retry" id="retryBtn">🔄 Reintentar</button>
             </div>
@@ -345,10 +344,8 @@
                 const micStatus = document.getElementById("micStatus");
                 const helpText = document.getElementById("helpText");
                 const transcriptArea = document.getElementById("transcriptArea");
-                const transcriptContent =
-                    document.getElementById("transcriptContent");
-                const nextBtnContainer =
-                    document.getElementById("nextBtnContainer");
+                const transcriptContent = document.getElementById("transcriptContent");
+                const nextBtnContainer = document.getElementById("nextBtnContainer");
                 const nextBtn = document.getElementById("nextBtn");
                 const retryContainer = document.getElementById("retryContainer");
                 const retryBtn = document.getElementById("retryBtn");
@@ -400,8 +397,7 @@
                     } else {
                         return new Promise((resolve, reject) => {
                             try {
-                                const textarea =
-                                    document.createElement("textarea");
+                                const textarea = document.createElement("textarea");
                                 textarea.value = text;
                                 textarea.style.position = "fixed";
                                 textarea.style.left = "-9999px";
@@ -419,76 +415,62 @@
                 }
 
                 function openGemini() {
-                    const isIPhone = /iPhone/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
+                    const isIPhone = /iPhone/.test(navigator.userAgent);
+
                     if (isIPhone) {
-                        // En iPhone, intentamos abrir el esquema universal "gemini://"
-                        // que debería lanzar la app nativa si está instalada.
-                        // Si no responde en 1 segundo, abrimos la web como fallback.
-                        const appScheme = "gemini://";
-                        const webUrl = "https://gemini.google.com/";
+                        // Intentar abrir la app con el esquema googlegemini://
+                        const appScheme = "googlegemini://";
+                        const webUrl = "https://gemini.google.com";
 
-                        // Intentamos abrir la app mediante un iframe (método común)
-                        const iframe = document.createElement("iframe");
-                        iframe.style.display = "none";
-                        iframe.src = appScheme;
-                        document.body.appendChild(iframe);
+                        // Abrimos el esquema de la app
+                        const win = window.open(appScheme, "_blank");
 
-                        // Si después de 1.2 segundos la app no se abrió, abrimos la web
-                        const timer = setTimeout(() => {
+                        // Si después de 1.5 segundos la app no se abrió, abrimos la web
+                        const fallbackTimer = setTimeout(() => {
                             window.open(webUrl, "_blank");
-                            document.body.removeChild(iframe);
-                        }, 1200);
+                        }, 1500);
 
-                        // Si la app se abre, el navegador puede perder el foco (blur)
-                        // o el iframe puede no llegar a cargarse. Limpiamos.
-                        const onBlur = () => {
-                            clearTimeout(timer);
-                            document.body.removeChild(iframe);
-                            window.removeEventListener("blur", onBlur);
-                        };
-                        window.addEventListener("blur", onBlur);
-                        // También limpiar después de 2 segundos por si acaso
-                        setTimeout(() => {
-                            if (document.body.contains(iframe)) {
-                                document.body.removeChild(iframe);
+                        // Si la ventana se cierra o pierde el foco, asumimos que la app se abrió
+                        // y cancelamos el fallback
+                        const checkClosed = setInterval(() => {
+                            if (win && win.closed) {
+                                clearTimeout(fallbackTimer);
+                                clearInterval(checkClosed);
                             }
-                            window.removeEventListener("blur", onBlur);
+                        }, 500);
+
+                        // Limpiar después de 3 segundos para evitar fugas
+                        setTimeout(() => {
+                            clearInterval(checkClosed);
                         }, 3000);
                     } else {
                         // Resto de dispositivos: abrir web en nueva pestaña
-                        window.open("https://gemini.google.com/", "_blank");
+                        window.open("https://gemini.google.com", "_blank");
                     }
                 }
 
                 // ===== DETECCIÓN DE ENTORNO =====
                 function checkEnvironment() {
                     const isLocalFile = window.location.protocol === "file:";
-                    const isFirefox =
-                        navigator.userAgent.toLowerCase().indexOf("firefox") >
-                        -1;
-                    const SpeechRecognition =
-                        window.SpeechRecognition ||
-                        window.webkitSpeechRecognition;
+                    const isFirefox = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
                     let helpMsg = "";
                     let isSupported = true;
 
                     if (isLocalFile) {
-                        helpMsg =
-                            "⚠️ Archivo local. Sirve la página con un servidor (ej. Live Server).";
+                        helpMsg = "⚠️ Archivo local. Sirve la página con un servidor (ej. Live Server).";
                         isSupported = false;
                     } else if (isFirefox) {
                         if (!SpeechRecognition) {
-                            helpMsg =
-                                "🦊 Firefox: activa 'media.webspeech.recognition.enable' en about:config o usa Chrome/Edge.";
+                            helpMsg = "🦊 Firefox: activa 'media.webspeech.recognition.enable' en about:config o usa Chrome/Edge.";
                             isSupported = false;
                         } else {
                             helpMsg = "🦊 Firefox detectado. Asegúrate de dar permisos.";
                         }
                     } else {
                         if (!SpeechRecognition) {
-                            helpMsg =
-                                "❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari.";
+                            helpMsg = "❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari.";
                             isSupported = false;
                         }
                     }
@@ -503,14 +485,11 @@
                 // ===== INICIALIZACIÓN =====
                 function initSpeech() {
                     const { isSupported, helpMsg } = checkEnvironment();
-                    const SpeechRecognition =
-                        window.SpeechRecognition ||
-                        window.webkitSpeechRecognition;
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
                     if (!SpeechRecognition) {
                         micBtn.disabled = true;
-                        micStatus.textContent =
-                            "❌ Reconocimiento de voz no disponible";
+                        micStatus.textContent = "❌ Reconocimiento de voz no disponible";
                         micStatus.className = "mic-status error";
                         showToast(
                             "Usa Chrome, Edge o Safari (o activa la preferencia en Firefox)",
@@ -541,9 +520,7 @@
                 // ===== FUNCIONES DE RECONOCIMIENTO =====
                 function startRecognition() {
                     try {
-                        const SpeechRecognition =
-                            window.SpeechRecognition ||
-                            window.webkitSpeechRecognition;
+                        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                         recognition = new SpeechRecognition();
                         recognition.lang = "es-ES";
                         recognition.continuous = true;
@@ -589,11 +566,7 @@
                             console.error("Speech error:", event.error);
                             let errorMsg = event.error;
                             if (errorMsg === "network") {
-                                showToast(
-                                    "⚠️ Error de red. Reintenta manualmente.",
-                                    "warning",
-                                    5000,
-                                );
+                                showToast("⚠️ Error de red. Reintenta manualmente.", "warning", 5000);
                                 micStatus.textContent = "⚠️ Error de red";
                                 micStatus.className = "mic-status error";
                                 micBtn.classList.remove("recording");
@@ -604,33 +577,20 @@
                                 if (finalTranscript.trim()) {
                                     transcriptArea.classList.add("visible");
                                     transcriptContent.textContent = finalTranscript.trim();
-                                    // Habilitar "Siguiente" si hay texto parcial
                                     nextBtnContainer.classList.add("visible");
                                 }
                             } else if (errorMsg === "not-allowed") {
-                                showToast(
-                                    "❌ Permiso denegado. Concede acceso al micrófono.",
-                                    "error",
-                                    5000,
-                                );
+                                showToast("❌ Permiso denegado. Concede acceso al micrófono.", "error", 5000);
                                 micStatus.textContent = "🚫 Permiso denegado";
                                 micStatus.className = "mic-status error";
                                 resetUI();
                             } else if (errorMsg === "no-speech") {
                                 // Silencio, no hacemos nada
                             } else if (errorMsg === "audio-capture") {
-                                showToast(
-                                    "❌ No se pudo acceder al micrófono. ¿Está conectado?",
-                                    "error",
-                                    4000,
-                                );
+                                showToast("❌ No se pudo acceder al micrófono. ¿Está conectado?", "error", 4000);
                                 resetUI();
                             } else {
-                                showToast(
-                                    `❌ Error: ${errorMsg}`,
-                                    "error",
-                                    4000,
-                                );
+                                showToast(`❌ Error: ${errorMsg}`, "error", 4000);
                                 resetUI();
                             }
                         };
@@ -638,11 +598,7 @@
                         recognition.onend = () => {
                             if (isRecording && !isStoppedByUser) {
                                 if (!micBtn.classList.contains("error-state")) {
-                                    showToast(
-                                        "⚠️ La grabación se detuvo inesperadamente. Reintenta.",
-                                        "warning",
-                                        4000,
-                                    );
+                                    showToast("⚠️ La grabación se detuvo inesperadamente. Reintenta.", "warning", 4000);
                                     micStatus.textContent = "⚠️ Detenido inesperadamente";
                                     micStatus.className = "mic-status error";
                                     micBtn.classList.remove("recording");
@@ -666,22 +622,14 @@
                         recognition.start();
                     } catch (err) {
                         console.error("Error al iniciar reconocimiento:", err);
-                        showToast(
-                            "❌ Error al iniciar el micrófono: " + err.message,
-                            "error",
-                            4000,
-                        );
+                        showToast("❌ Error al iniciar el micrófono: " + err.message, "error", 4000);
                         resetUI();
                     }
                 }
 
                 function toggleRecording() {
                     if (micBtn.disabled) {
-                        showToast(
-                            "El micrófono no está disponible",
-                            "error",
-                            3000,
-                        );
+                        showToast("El micrófono no está disponible", "error", 3000);
                         return;
                     }
 
@@ -741,10 +689,7 @@
                         } catch (e) {}
                         recognition = null;
                     }
-                    if (
-                        !micStatus.classList.contains("done") &&
-                        !micStatus.classList.contains("error")
-                    ) {
+                    if (!micStatus.classList.contains("done") && !micStatus.classList.contains("error")) {
                         micStatus.textContent = "Toca el micrófono para empezar";
                         micStatus.className = "mic-status";
                     }
@@ -763,11 +708,7 @@
                     const fullText = PROMPT + "\n\n" + text;
                     copyToClipboard(fullText)
                         .then(() => {
-                            showToast(
-                                "✅ Prompt copiado al portapapeles",
-                                "success",
-                                3000,
-                            );
+                            showToast("✅ Prompt copiado al portapapeles", "success", 3000);
                             openGemini();
                         })
                         .catch((err) => {
@@ -791,7 +732,7 @@
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v6.0 (soporte iPhone nativo)");
+                console.log("🎙️ ideas app v6.1 (soporte iPhone con googlegemini://)");
             })();
         </script>
     </body>
