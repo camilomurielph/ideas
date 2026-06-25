@@ -6,9 +6,9 @@
         <title>ideas</title>
 
         <!-- Icono personalizado para navegadores y iOS -->
-        <link rel="icon" href="https://res.cloudinary.com/ddh8chtup/image/upload/v1782362537/icono_app_fjzeq1.png" />
-        <link rel="apple-touch-icon" href="https://res.cloudinary.com/ddh8chtup/image/upload/v1782362537/icono_app_fjzeq1.png" />
-        <link rel="apple-touch-icon-precomposed" href="https://res.cloudinary.com/ddh8chtup/image/upload/v1782362537/icono_app_fjzeq1.png" />
+        <link rel="icon" href="https://res.cloudinary.com/ddh8chtup/image/upload/v1782363757/icono_nuevo_1_xy0olo.png" />
+        <link rel="apple-touch-icon" href="https://res.cloudinary.com/ddh8chtup/image/upload/v1782363757/icono_nuevo_1_xy0olo.png" />
+        <link rel="apple-touch-icon-precomposed" href="https://res.cloudinary.com/ddh8chtup/image/upload/v1782363757/icono_nuevo_1_xy0olo.png" />
 
         <!-- Configuración para modo aplicación en iOS -->
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -417,13 +417,12 @@
 
             <!-- Fila de acciones: toggle + siguiente / reintento -->
             <div class="actions-row">
-                <!-- Toggle switch estilo iOS -->
+                <!-- Toggle switch estilo iOS con etiqueta "Markdown" -->
                 <div class="toggle-container">
-                    <span class="toggle-label active" id="toggleLabelLeft">Markdown</span>
+                    <span class="toggle-label active" id="toggleLabel">Markdown</span>
                     <div class="toggle-switch active" id="toggleSwitch">
                         <div class="slider"></div>
                     </div>
-                    <span class="toggle-label" id="toggleLabelRight">Universal</span>
                 </div>
 
                 <div class="next-btn-container" id="nextBtnContainer">
@@ -459,8 +458,7 @@
                 const retryContainer = document.getElementById("retryContainer");
                 const retryBtn = document.getElementById("retryBtn");
                 const toggleSwitch = document.getElementById("toggleSwitch");
-                const toggleLabelLeft = document.getElementById("toggleLabelLeft");
-                const toggleLabelRight = document.getElementById("toggleLabelRight");
+                const toggleLabel = document.getElementById("toggleLabel");
                 const toast = document.getElementById("toast");
 
                 // ===== PROMPTS =====
@@ -857,14 +855,12 @@
                     if (currentMode === 'markdown') {
                         currentMode = 'universal';
                         toggleSwitch.classList.remove('active');
-                        toggleLabelLeft.classList.remove('active');
-                        toggleLabelRight.classList.add('active');
+                        toggleLabel.classList.remove('active');
                         showToast('Modo Universal activado (texto plano)', 'info', 2000);
                     } else {
                         currentMode = 'markdown';
                         toggleSwitch.classList.add('active');
-                        toggleLabelLeft.classList.add('active');
-                        toggleLabelRight.classList.remove('active');
+                        toggleLabel.classList.add('active');
                         showToast('Modo Markdown activado', 'info', 2000);
                     }
                 }
@@ -878,7 +874,7 @@
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v6.4 (icono personalizado)");
+                console.log("🎙️ ideas app v6.5 (icono actualizado + toggle simplificado)");
             })();
         </script>
     </body>
