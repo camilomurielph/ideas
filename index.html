@@ -419,38 +419,10 @@
                 }
 
                 function openGemini() {
-                    const isIPhone = /iPhone/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
-                    if (isIPhone) {
-                        // Intentar abrir la app nativa de Gemini
-                        // Esquema: gemini:// o https://gemini.google.com/ (iOS Universal Link)
-                        // Probamos primero el esquema de la app
-                        const geminiAppUrl = "gemini://";
-                        const geminiWebUrl = "https://gemini.google.com/";
-                        // Abrimos el esquema de la app, y si no responde, redirigimos a la web
-                        const iframe = document.createElement("iframe");
-                        iframe.style.display = "none";
-                        iframe.src = geminiAppUrl;
-                        document.body.appendChild(iframe);
-                        // También abrimos la web en una nueva pestaña como fallback
-                        // Pero si la app está instalada, el esquema se activará y la web no llegará a abrirse
-                        // Usamos un temporizador para abrir la web si no se detecta la app
-                        let fallbackTimer = setTimeout(() => {
-                            window.open(geminiWebUrl, "_blank");
-                        }, 1000);
-                        // El evento de blur puede indicar que la app se abrió
-                        window.addEventListener("blur", function onBlur() {
-                            clearTimeout(fallbackTimer);
-                            window.removeEventListener("blur", onBlur);
-                            document.body.removeChild(iframe);
-                        });
-                        // Limpiar si algo falla
-                        setTimeout(() => {
-                            document.body.removeChild(iframe);
-                        }, 2000);
-                    } else {
-                        // Resto de dispositivos: abrir web
-                        window.open("https://gemini.google.com/", "_blank");
-                    }
+                    // Para iPhone, el enlace https://gemini.google.com/ es un enlace universal
+                    // que abre la app si está instalada, o la web en caso contrario.
+                    // En otros dispositivos, simplemente abre la web en una nueva pestaña.
+                    window.open("https://gemini.google.com/", "_blank");
                 }
 
                 // ===== DETECCIÓN DE ENTORNO =====
@@ -551,7 +523,6 @@
                             micBtn.textContent = "⏹️";
                             micStatus.textContent = "🎙️ Grabando… (habla sin pausa)";
                             micStatus.className = "mic-status recording";
-                            // Ocultar botones de reintento
                             retryContainer.style.display = "none";
                             nextBtnContainer.classList.remove("visible");
                             showToast("🎤 Grabando...", "info", 2000);
@@ -580,8 +551,35 @@
                         };
 
                         recognition.onerror = (event) => {
-                            console.error("Speech error:", event.error);
-                            if (event.error === "not-allowed") {
+                            console.error("❌ Speech error:", event);
+                            // Log adicional para depuración en Firefox/Zen
+                            console.log("Error details:", {
+                                error: event.error,
+                                message: event.message || "No message",
+                                target: event.target,
+                                type: event.type
+                            });
+                            
+                            let errorMsg = event.error;
+                            if (errorMsg === "network") {
+                                // Mostrar mensaje detallado
+                                showToast(
+                                    "⚠️ Error de red (posible bloqueo de la API de Google). Reintenta manualmente.",
+                                    "warning",
+                                    6000,
+                                );
+                                micStatus.textContent = "⚠️ Error de red (revisa conexión)";
+                                micStatus.className = "mic-status error";
+                                micBtn.classList.remove("recording");
+                                micBtn.classList.add("error-state");
+                                micBtn.textContent = "❌";
+                                isRecording = false;
+                                retryContainer.style.display = "flex";
+                                if (finalTranscript.trim()) {
+                                    transcriptArea.classList.add("visible");
+                                    transcriptContent.textContent = finalTranscript.trim();
+                                }
+                            } else if (errorMsg === "not-allowed") {
                                 showToast(
                                     "❌ Permiso denegado. Concede acceso al micrófono.",
                                     "error",
@@ -590,38 +588,18 @@
                                 micStatus.textContent = "🚫 Permiso denegado";
                                 micStatus.className = "mic-status error";
                                 resetUI();
-                            } else if (event.error === "no-speech") {
+                            } else if (errorMsg === "no-speech") {
                                 // Silencio, no hacemos nada
-                            } else if (event.error === "audio-capture") {
+                            } else if (errorMsg === "audio-capture") {
                                 showToast(
                                     "❌ No se pudo acceder al micrófono. ¿Está conectado?",
                                     "error",
                                     4000,
                                 );
                                 resetUI();
-                            } else if (event.error === "network") {
-                                // Error de red: mostrar botón de reintento
-                                showToast(
-                                    "⚠️ Error de red. Reintenta manualmente.",
-                                    "warning",
-                                    5000,
-                                );
-                                micStatus.textContent = "⚠️ Error de red";
-                                micStatus.className = "mic-status error";
-                                micBtn.classList.remove("recording");
-                                micBtn.classList.add("error-state");
-                                micBtn.textContent = "❌";
-                                isRecording = false;
-                                // Mostrar botón de reintento
-                                retryContainer.style.display = "flex";
-                                // Mantener el transcript si existe
-                                if (finalTranscript.trim()) {
-                                    transcriptArea.classList.add("visible");
-                                    transcriptContent.textContent = finalTranscript.trim();
-                                }
                             } else {
                                 showToast(
-                                    `❌ Error: ${event.error}`,
+                                    `❌ Error: ${errorMsg}`,
                                     "error",
                                     4000,
                                 );
@@ -631,8 +609,7 @@
 
                         recognition.onend = () => {
                             if (isRecording && !isStoppedByUser) {
-                                // Si terminó inesperadamente y no fue por el usuario, mostramos error
-                                // pero solo si no estamos en estado de error ya
+                                // Si terminó inesperadamente y no fue por el usuario
                                 if (!micBtn.classList.contains("error-state")) {
                                     showToast(
                                         "⚠️ La grabación se detuvo inesperadamente. Reintenta.",
@@ -652,17 +629,15 @@
                                     }
                                 }
                             } else if (isStoppedByUser) {
-                                // Detenido por el usuario
                                 handleStop();
                             } else {
-                                // Otros casos
                                 resetUI();
                             }
                         };
 
                         recognition.start();
                     } catch (err) {
-                        console.error("Error al iniciar reconocimiento:", err);
+                        console.error("❌ Error al iniciar reconocimiento:", err);
                         showToast(
                             "❌ Error al iniciar el micrófono: " + err.message,
                             "error",
@@ -682,7 +657,6 @@
                         return;
                     }
 
-                    // Si estamos en estado de error (botón con ❌), reiniciamos
                     if (micBtn.classList.contains("error-state")) {
                         // Limpiar estado de error y volver a empezar
                         resetUI();
@@ -691,7 +665,6 @@
                     }
 
                     if (isRecording) {
-                        // Detener grabación manualmente
                         isStoppedByUser = true;
                         if (recognition) {
                             recognition.stop();
@@ -699,7 +672,6 @@
                         return;
                     }
 
-                    // Iniciar grabación
                     if (!isRecording) {
                         startRecognition();
                     }
@@ -717,7 +689,6 @@
                         transcriptArea.classList.add("visible");
                         transcriptContent.textContent = finalText;
                         nextBtnContainer.classList.add("visible");
-                        // Guardar el texto final
                         transcript = finalText;
                         showToast("✅ Grabación finalizada", "success", 2000);
                     } else {
@@ -780,11 +751,8 @@
 
                 // ===== MANEJADOR DE REINTENTO =====
                 function handleRetry() {
-                    // Limpiar estado y reiniciar
                     resetUI();
-                    // Ocultar botón de reintento
                     retryContainer.style.display = "none";
-                    // Iniciar de nuevo
                     startRecognition();
                 }
 
@@ -796,7 +764,7 @@
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v5.0 (reintento manual + soporte iPhone)");
+                console.log("🎙️ ideas app v5.1 (logs detallados + enlace universal para iPhone)");
             })();
         </script>
     </body>
