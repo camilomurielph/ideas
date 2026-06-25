@@ -182,6 +182,40 @@
                 border-radius: 10px;
             }
 
+            /* ========== BOTÓN SIGUIENTE ========== */
+            .next-btn-container {
+                margin-top: 1.5rem;
+                display: none;
+                justify-content: center;
+            }
+            .next-btn-container.visible {
+                display: flex;
+            }
+
+            .btn-next {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.8rem 2.5rem;
+                border: none;
+                border-radius: 60px;
+                font-family: "Montserrat", sans-serif;
+                font-weight: 600;
+                font-size: 1rem;
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+            .btn-next:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 28px rgba(16, 185, 129, 0.5);
+            }
+            .btn-next:active {
+                transform: scale(0.95);
+            }
+
             /* ========== FOOTER ========== */
             .app-footer {
                 margin-top: 2.5rem;
@@ -232,20 +266,6 @@
                 border-color: rgba(80, 255, 160, 0.15);
             }
 
-            /* ========== BOTÓN DE AYUDA / COMPROBAR ========== */
-            .help-link {
-                display: inline-block;
-                margin-top: 0.8rem;
-                color: #4a8cff;
-                text-decoration: underline dotted;
-                cursor: pointer;
-                font-size: 0.85rem;
-                transition: color 0.3s ease;
-            }
-            .help-link:hover {
-                color: #8bb4ff;
-            }
-
             @media (max-width: 640px) {
                 .app {
                     padding: 1.5rem 1.2rem;
@@ -283,6 +303,13 @@
                 <div class="content" id="transcriptContent"></div>
             </div>
 
+            <!-- Botón Siguiente (aparece al detener) -->
+            <div class="next-btn-container" id="nextBtnContainer">
+                <button class="btn-next" id="nextBtn">
+                    ➡️ Siguiente
+                </button>
+            </div>
+
             <div class="app-footer">
                 <a href="https://camilomurielph.github.io/" target="_blank"
                     >App por Camilomuriel</a
@@ -300,10 +327,12 @@
                 const micBtn = document.getElementById("micBtn");
                 const micStatus = document.getElementById("micStatus");
                 const helpText = document.getElementById("helpText");
-                const transcriptArea =
-                    document.getElementById("transcriptArea");
+                const transcriptArea = document.getElementById("transcriptArea");
                 const transcriptContent =
                     document.getElementById("transcriptContent");
+                const nextBtnContainer =
+                    document.getElementById("nextBtnContainer");
+                const nextBtn = document.getElementById("nextBtn");
                 const toast = document.getElementById("toast");
 
                 // ===== PROMPT =====
@@ -332,6 +361,8 @@
                 let isRecording = false;
                 let recognition = null;
                 let transcript = "";
+                let finalTranscript = "";
+                let shouldRestart = false;
 
                 // ===== UTILIDADES =====
                 function showToast(msg, type = "info", duration = 3500) {
@@ -397,47 +428,37 @@
                         window.SpeechRecognition ||
                         window.webkitSpeechRecognition;
 
-                    // Mensajes de ayuda
                     let helpMsg = "";
                     let isSupported = true;
 
                     if (isLocalFile) {
                         helpMsg =
-                            "⚠️ Archivo local. Para usar el micrófono, sirve la página con un servidor local (ej. Live Server, python -m http.server).";
+                            "⚠️ Archivo local. Sirve la página con un servidor (ej. Live Server).";
                         isSupported = false;
                     } else if (isFirefox) {
-                        // Firefox requiere preferencia
                         if (!SpeechRecognition) {
                             helpMsg =
                                 "🦊 Firefox: activa 'media.webspeech.recognition.enable' en about:config o usa Chrome/Edge.";
                             isSupported = false;
                         } else {
-                            helpMsg =
-                                "🦊 Firefox detectado. Si falla, revisa about:config.";
+                            helpMsg = "🦊 Firefox detectado. Asegúrate de dar permisos.";
                         }
                     } else if (isSafari) {
-                        // Safari soporta webkitSpeechRecognition en versiones recientes (14+)
                         if (!SpeechRecognition) {
                             helpMsg =
                                 "🍎 Safari: actualiza a la última versión o usa Chrome.";
                             isSupported = false;
                         } else {
-                            helpMsg =
-                                "🍎 Safari detectado. Asegúrate de dar permisos.";
+                            helpMsg = "🍎 Safari detectado. Da permisos de micrófono.";
                         }
                     } else if (isChrome || isEdge) {
-                        if (
-                            window.location.protocol === "https:" ||
-                            window.location.hostname === "localhost" ||
-                            window.location.hostname === "127.0.0.1"
-                        ) {
-                            helpMsg = "✅ Entorno seguro, todo listo.";
+                        if (window.location.protocol === "https:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+                            helpMsg = "✅ Entorno seguro, listo para usar.";
                         } else {
                             helpMsg =
                                 "⚠️ No estás en HTTPS o localhost. Algunos navegadores pueden bloquear el micrófono.";
                         }
                     } else {
-                        // Otros navegadores
                         if (!SpeechRecognition) {
                             helpMsg =
                                 "❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari.";
@@ -482,18 +503,16 @@
                         return;
                     }
 
-                    // Todo correcto
                     micBtn.disabled = false;
                     micStatus.textContent = "Toca el micrófono para empezar";
                     micStatus.className = "mic-status";
                     if (helpMsg && !helpMsg.includes("✅")) {
-                        // Mostrar ayuda no crítica
                         helpText.textContent = helpMsg;
                     }
                 }
 
-                // ===== INICIAR GRABACIÓN =====
-                function startRecording() {
+                // ===== INICIAR/DETENER GRABACIÓN =====
+                function toggleRecording() {
                     if (micBtn.disabled) {
                         showToast(
                             "El micrófono no está disponible",
@@ -504,19 +523,27 @@
                     }
 
                     if (isRecording) {
+                        // Detener grabación manualmente
                         if (recognition) {
                             recognition.stop();
+                            // Marcamos que es un stop manual, no un error
+                            shouldRestart = false;
                         }
                         return;
                     }
 
+                    // Iniciar grabación
+                    startRecognition();
+                }
+
+                function startRecognition() {
                     try {
                         const SpeechRecognition =
                             window.SpeechRecognition ||
                             window.webkitSpeechRecognition;
                         recognition = new SpeechRecognition();
                         recognition.lang = "es-ES";
-                        recognition.continuous = false;
+                        recognition.continuous = true; // <-- CRUCIAL: no se detiene por silencio
                         recognition.interimResults = true;
                         recognition.maxAlternatives = 1;
 
@@ -524,22 +551,20 @@
                             isRecording = true;
                             micBtn.classList.add("recording");
                             micBtn.textContent = "⏹️";
-                            micStatus.textContent = "🎙️ Grabando… habla ahora";
+                            micStatus.textContent = "🎙️ Grabando… (habla sin pausa)";
                             micStatus.className = "mic-status recording";
                             transcript = "";
+                            finalTranscript = "";
                             transcriptArea.classList.remove("visible");
                             transcriptContent.textContent = "";
+                            nextBtnContainer.classList.remove("visible");
                             showToast("🎤 Grabando...", "info", 2000);
                         };
 
                         recognition.onresult = (event) => {
                             let interim = "";
                             let final = "";
-                            for (
-                                let i = event.resultIndex;
-                                i < event.results.length;
-                                i++
-                            ) {
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
                                 const part = event.results[i][0].transcript;
                                 if (event.results[i].isFinal) {
                                     final += part;
@@ -547,14 +572,17 @@
                                     interim += part;
                                 }
                             }
-                            const displayText = final + interim;
+                            // Acumular finales
+                            if (final) {
+                                finalTranscript += final + " ";
+                            }
+                            const displayText = finalTranscript + interim;
                             if (displayText.trim()) {
                                 transcriptArea.classList.add("visible");
                                 transcriptContent.textContent = displayText;
                             }
-                            if (final) {
-                                transcript = final;
-                            }
+                            // Guardar el último transcript completo
+                            transcript = finalTranscript + interim;
                         };
 
                         recognition.onerror = (event) => {
@@ -568,75 +596,53 @@
                                 micStatus.textContent = "🚫 Permiso denegado";
                                 micStatus.className = "mic-status error";
                             } else if (event.error === "no-speech") {
-                                showToast(
-                                    "🔇 No se detectó voz",
-                                    "error",
-                                    3000,
-                                );
+                                // No hacer nada, con continuous:true se reinicia solo
+                                // pero podemos mostrar un aviso sutil
+                                // showToast("🔇 No se detecta voz", "info", 1500);
                             } else if (event.error === "audio-capture") {
                                 showToast(
                                     "❌ No se pudo acceder al micrófono. ¿Está conectado?",
                                     "error",
                                     4000,
                                 );
+                                resetUI();
                             } else if (event.error === "network") {
                                 showToast(
                                     "❌ Error de red, intenta de nuevo",
                                     "error",
                                     4000,
                                 );
+                                resetUI();
                             } else {
                                 showToast(
                                     `❌ Error: ${event.error}`,
                                     "error",
                                     4000,
                                 );
-                            }
-                            resetUI();
-                        };
-
-                        recognition.onend = () => {
-                            if (isRecording) {
-                                if (transcript.trim()) {
-                                    transcriptArea.classList.add("visible");
-                                    transcriptContent.textContent = transcript;
-                                    micStatus.textContent =
-                                        "✅ Transcripción completada";
-                                    micStatus.className = "mic-status done";
-                                    // Procesar
-                                    const fullText =
-                                        PROMPT + "\n\n" + transcript.trim();
-                                    copyToClipboard(fullText)
-                                        .then(() => {
-                                            showToast(
-                                                "✅ Prompt copiado al portapapeles",
-                                                "success",
-                                                3500,
-                                            );
-                                            openGemini();
-                                        })
-                                        .catch((err) => {
-                                            console.error(
-                                                "Error al copiar:",
-                                                err,
-                                            );
-                                            showToast(
-                                                "❌ No se pudo copiar",
-                                                "error",
-                                                4000,
-                                            );
-                                        });
-                                } else {
-                                    showToast(
-                                        "No se captó ninguna palabra",
-                                        "error",
-                                        3000,
-                                    );
-                                }
                                 resetUI();
                             }
                         };
 
+                        recognition.onend = () => {
+                            // El reconocimiento se detuvo (por error o porque llamamos a stop())
+                            if (isRecording) {
+                                // Si aún estamos en estado de grabación, significa que se detuvo inesperadamente
+                                // y queremos reiniciarlo (a menos que sea un stop manual)
+                                if (shouldRestart) {
+                                    // Reiniciar automáticamente para continuar escuchando
+                                    startRecognition();
+                                } else {
+                                    // Stop manual: procesar el resultado
+                                    handleStop();
+                                }
+                            } else {
+                                // No estábamos grabando, no hacer nada
+                                resetUI();
+                            }
+                        };
+
+                        // Permitir reinicio automático en caso de que se detenga por error sin ser manual
+                        shouldRestart = true;
                         recognition.start();
                     } catch (err) {
                         console.error("Error al iniciar reconocimiento:", err);
@@ -646,6 +652,34 @@
                             4000,
                         );
                         resetUI();
+                    }
+                }
+
+                function handleStop() {
+                    // Detener manual
+                    isRecording = false;
+                    micBtn.classList.remove("recording");
+                    micBtn.textContent = "🎤";
+                    micStatus.textContent = "⏹️ Grabación detenida";
+                    micStatus.className = "mic-status done";
+
+                    // Mostrar transcripción final
+                    if (transcript.trim()) {
+                        transcriptArea.classList.add("visible");
+                        transcriptContent.textContent = transcript.trim();
+                        // Mostrar botón Siguiente
+                        nextBtnContainer.classList.add("visible");
+                        showToast("✅ Grabación finalizada", "success", 2000);
+                    } else {
+                        showToast("No se captó ninguna palabra", "error", 3000);
+                        resetUI();
+                    }
+                    // Limpiar referencia
+                    if (recognition) {
+                        try {
+                            recognition.abort();
+                        } catch (e) {}
+                        recognition = null;
                     }
                 }
 
@@ -663,19 +697,46 @@
                         !micStatus.classList.contains("done") &&
                         !micStatus.classList.contains("error")
                     ) {
-                        micStatus.textContent =
-                            "Toca el micrófono para empezar";
+                        micStatus.textContent = "Toca el micrófono para empezar";
                         micStatus.className = "mic-status";
                     }
+                    // Si se resetea, ocultar botón siguiente
+                    nextBtnContainer.classList.remove("visible");
+                }
+
+                // ===== MANEJADOR DEL BOTÓN SIGUIENTE =====
+                function handleNext() {
+                    const text = transcript.trim();
+                    if (!text) {
+                        showToast("No hay transcripción para procesar", "error", 3000);
+                        return;
+                    }
+
+                    const fullText = PROMPT + "\n\n" + text;
+                    copyToClipboard(fullText)
+                        .then(() => {
+                            showToast(
+                                "✅ Prompt copiado al portapapeles",
+                                "success",
+                                3000,
+                            );
+                            // Abrir Gemini
+                            openGemini();
+                        })
+                        .catch((err) => {
+                            console.error("Error al copiar:", err);
+                            showToast("❌ No se pudo copiar", "error", 4000);
+                        });
                 }
 
                 // ===== EVENTOS =====
-                micBtn.addEventListener("click", startRecording);
+                micBtn.addEventListener("click", toggleRecording);
+                nextBtn.addEventListener("click", handleNext);
 
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v2.1 (diagnóstico mejorado)");
+                console.log("🎙️ ideas app v3.0 (grabación continua + botón Siguiente)");
             })();
         </script>
     </body>
