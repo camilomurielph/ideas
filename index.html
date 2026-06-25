@@ -5,12 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <title>ideas</title>
 
-        <!-- Favicon para navegadores -->
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>" />
-
-        <!-- Icono para iPhone / iPad (pantalla de inicio) -->
-        <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%231a5cff'/><stop offset='100%25' stop-color='%237c3aed'/></linearGradient></defs><circle cx='50' cy='50' r='48' fill='url(%23g)' stroke='%234a8cff' stroke-width='2'/><text x='50' y='72' font-size='54' text-anchor='middle' fill='white'>🎤</text></svg>" />
-        <link rel="apple-touch-icon-precomposed" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%231a5cff'/><stop offset='100%25' stop-color='%237c3aed'/></linearGradient></defs><circle cx='50' cy='50' r='48' fill='url(%23g)' stroke='%234a8cff' stroke-width='2'/><text x='50' y='72' font-size='54' text-anchor='middle' fill='white'>🎤</text></svg>" />
+        <!-- Icono generado dinámicamente (PNG) -->
+        <link rel="icon" href="" id="dynamicFavicon" />
+        <link rel="apple-touch-icon" href="" id="dynamicAppleIcon" />
 
         <!-- Configuración para modo aplicación en iOS -->
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -201,6 +198,56 @@
                 margin-top: 1.5rem;
             }
 
+            /* ===== TOGGLE SWITCH ESTILO iOS ===== */
+            .toggle-container {
+                display: flex;
+                align-items: center;
+                gap: 0.8rem;
+                background: rgba(255, 255, 255, 0.04);
+                padding: 0.3rem 0.8rem;
+                border-radius: 60px;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+            }
+            .toggle-label {
+                font-size: 0.7rem;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.4);
+                letter-spacing: 0.3px;
+                transition: color 0.3s ease;
+                user-select: none;
+            }
+            .toggle-label.active {
+                color: rgba(255, 255, 255, 0.8);
+            }
+            .toggle-switch {
+                position: relative;
+                width: 44px;
+                height: 26px;
+                background: #555;
+                border-radius: 13px;
+                cursor: pointer;
+                transition: background 0.3s ease;
+                flex-shrink: 0;
+            }
+            .toggle-switch.active {
+                background: #34c759;
+            }
+            .toggle-switch .slider {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 22px;
+                height: 22px;
+                background: white;
+                border-radius: 50%;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .toggle-switch.active .slider {
+                transform: translateX(18px);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            }
+
             .next-btn-container {
                 display: none;
                 justify-content: center;
@@ -210,8 +257,7 @@
             }
 
             .btn-next,
-            .btn-retry,
-            .btn-mode {
+            .btn-retry {
                 display: inline-flex;
                 align-items: center;
                 gap: 0.5rem;
@@ -252,30 +298,6 @@
             }
             .btn-retry:active {
                 transform: scale(0.95);
-            }
-
-            .btn-mode {
-                background: rgba(255, 255, 255, 0.06);
-                color: rgba(255, 255, 255, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                font-size: 0.75rem;
-                padding: 0.4rem 1rem;
-                letter-spacing: 0.3px;
-            }
-            .btn-mode:hover {
-                background: rgba(255, 255, 255, 0.1);
-                color: #f0f6fc;
-                border-color: rgba(255, 255, 255, 0.15);
-            }
-            .btn-mode.active-markdown {
-                border-color: #4a8cff;
-                color: #4a8cff;
-                background: rgba(74, 140, 255, 0.08);
-            }
-            .btn-mode.active-universal {
-                border-color: #f59e0b;
-                color: #f59e0b;
-                background: rgba(245, 158, 11, 0.08);
             }
 
             .app-footer {
@@ -351,6 +373,23 @@
                     width: 100%;
                     justify-content: center;
                 }
+                .toggle-container {
+                    padding: 0.3rem 0.6rem;
+                }
+                .toggle-label {
+                    font-size: 0.6rem;
+                }
+                .toggle-switch {
+                    width: 38px;
+                    height: 22px;
+                }
+                .toggle-switch .slider {
+                    width: 18px;
+                    height: 18px;
+                }
+                .toggle-switch.active .slider {
+                    transform: translateX(16px);
+                }
             }
         </style>
     </head>
@@ -375,9 +414,16 @@
                 <div class="content" id="transcriptContent"></div>
             </div>
 
-            <!-- Fila de acciones: modo + siguiente / reintento -->
+            <!-- Fila de acciones: toggle + siguiente / reintento -->
             <div class="actions-row">
-                <button class="btn-mode active-markdown" id="modeToggleBtn">Modo: Markdown</button>
+                <!-- Toggle switch estilo iOS -->
+                <div class="toggle-container">
+                    <span class="toggle-label active" id="toggleLabelLeft">Markdown</span>
+                    <div class="toggle-switch active" id="toggleSwitch">
+                        <div class="slider"></div>
+                    </div>
+                    <span class="toggle-label" id="toggleLabelRight">Universal</span>
+                </div>
 
                 <div class="next-btn-container" id="nextBtnContainer">
                     <button class="btn-next" id="nextBtn">➡️ Siguiente</button>
@@ -401,6 +447,75 @@
             (function () {
                 "use strict";
 
+                // ===== GENERAR ICONO PNG =====
+                function generateIcon() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 180;
+                    canvas.height = 180;
+                    const ctx = canvas.getContext('2d');
+
+                    // Gradiente de fondo
+                    const grad = ctx.createLinearGradient(0, 0, 180, 180);
+                    grad.addColorStop(0, '#1a5cff');
+                    grad.addColorStop(1, '#7c3aed');
+                    ctx.beginPath();
+                    ctx.arc(90, 90, 84, 0, Math.PI * 2);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                    ctx.strokeStyle = '#4a8cff';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+
+                    // Micrófono (dibujado simple con formas)
+                    ctx.fillStyle = 'white';
+                    // Cuerpo del micrófono (rectángulo redondeado)
+                    const micX = 70, micY = 50, micW = 40, micH = 60;
+                    const radius = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(micX + radius, micY);
+                    ctx.lineTo(micX + micW - radius, micY);
+                    ctx.quadraticCurveTo(micX + micW, micY, micX + micW, micY + radius);
+                    ctx.lineTo(micX + micW, micY + micH - radius);
+                    ctx.quadraticCurveTo(micX + micW, micY + micH, micX + micW - radius, micY + micH);
+                    ctx.lineTo(micX + radius, micY + micH);
+                    ctx.quadraticCurveTo(micX, micY + micH, micX, micY + micH - radius);
+                    ctx.lineTo(micX, micY + radius);
+                    ctx.quadraticCurveTo(micX, micY, micX + radius, micY);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Base del micrófono (línea horizontal)
+                    ctx.beginPath();
+                    ctx.moveTo(75, 115);
+                    ctx.lineTo(105, 115);
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = 'white';
+                    ctx.stroke();
+
+                    // Pequeño círculo en la base
+                    ctx.beginPath();
+                    ctx.arc(90, 125, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = 'white';
+                    ctx.fill();
+
+                    // Arco (soporte)
+                    ctx.beginPath();
+                    ctx.arc(90, 125, 20, Math.PI, 2 * Math.PI);
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = 'white';
+                    ctx.stroke();
+
+                    return canvas.toDataURL('image/png');
+                }
+
+                const iconDataUrl = generateIcon();
+
+                // Asignar a los links
+                const faviconLink = document.getElementById('dynamicFavicon');
+                const appleIconLink = document.getElementById('dynamicAppleIcon');
+                faviconLink.href = iconDataUrl;
+                appleIconLink.href = iconDataUrl;
+
                 // ===== DOM REFS =====
                 const micBtn = document.getElementById("micBtn");
                 const micStatus = document.getElementById("micStatus");
@@ -411,7 +526,9 @@
                 const nextBtn = document.getElementById("nextBtn");
                 const retryContainer = document.getElementById("retryContainer");
                 const retryBtn = document.getElementById("retryBtn");
-                const modeToggleBtn = document.getElementById("modeToggleBtn");
+                const toggleSwitch = document.getElementById("toggleSwitch");
+                const toggleLabelLeft = document.getElementById("toggleLabelLeft");
+                const toggleLabelRight = document.getElementById("toggleLabelRight");
                 const toast = document.getElementById("toast");
 
                 // ===== PROMPTS =====
@@ -457,8 +574,6 @@
                 let transcript = "";
                 let finalTranscript = "";
                 let isStoppedByUser = false;
-
-                // ===== MODO =====
                 let currentMode = 'markdown'; // 'markdown' o 'universal'
 
                 // ===== UTILIDADES =====
@@ -805,17 +920,19 @@
                     startRecognition();
                 }
 
-                // ===== MANEJADOR DE MODO =====
+                // ===== MANEJADOR DEL TOGGLE =====
                 function toggleMode() {
                     if (currentMode === 'markdown') {
                         currentMode = 'universal';
-                        modeToggleBtn.textContent = 'Modo: Universal';
-                        modeToggleBtn.className = 'btn-mode active-universal';
+                        toggleSwitch.classList.remove('active');
+                        toggleLabelLeft.classList.remove('active');
+                        toggleLabelRight.classList.add('active');
                         showToast('Modo Universal activado (texto plano)', 'info', 2000);
                     } else {
                         currentMode = 'markdown';
-                        modeToggleBtn.textContent = 'Modo: Markdown';
-                        modeToggleBtn.className = 'btn-mode active-markdown';
+                        toggleSwitch.classList.add('active');
+                        toggleLabelLeft.classList.add('active');
+                        toggleLabelRight.classList.remove('active');
                         showToast('Modo Markdown activado', 'info', 2000);
                     }
                 }
@@ -824,12 +941,12 @@
                 micBtn.addEventListener("click", toggleRecording);
                 nextBtn.addEventListener("click", handleNext);
                 retryBtn.addEventListener("click", handleRetry);
-                modeToggleBtn.addEventListener("click", toggleMode);
+                toggleSwitch.addEventListener("click", toggleMode);
 
                 // ===== INICIALIZACIÓN =====
                 initSpeech();
                 showToast("Presiona el micrófono para empezar", "info", 3000);
-                console.log("🎙️ ideas app v6.2 (modo universal/markdown)");
+                console.log("🎙️ ideas app v6.3 (icono PNG + toggle estilo iOS)");
             })();
         </script>
     </body>
