@@ -237,7 +237,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 0.5rem;
 }
 .mic-view .mic-btn {
     width: 140px;
@@ -292,10 +292,40 @@ body {
 .mic-view .mic-status.recording { color: #ff6b6b; }
 .mic-view .mic-status.done { color: #4adc78; }
 .mic-view .mic-status.error { color: #ff6b6b; }
-.mic-view .mic-status.small {
-    font-size: 0.85rem;
-    opacity: 0.7;
+
+/* Burbuja de ayuda contextual */
+.help-bubble {
+    background: linear-gradient(135deg, #1a5cff, #7c3aed);
+    padding: 0.6rem 1.8rem;
+    border-radius: 60px;
+    max-width: 90%;
+    min-height: 2.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(26, 92, 255, 0.25);
+    transition: all 0.3s ease;
     margin-top: 0.2rem;
+}
+.help-bubble .help-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.5;
+}
+.help-bubble .help-text strong {
+    color: #ffffff;
+    font-weight: 700;
+}
+.help-bubble.empty {
+    background: transparent;
+    box-shadow: none;
+    padding: 0.6rem 0;
+    min-height: 2.8rem;
+}
+.help-bubble.empty .help-text {
+    color: transparent;
 }
 
 .mic-view .transcript-area {
@@ -422,8 +452,21 @@ body {
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
+}
+.modal-idea .modal-header .left-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+.modal-idea .modal-header .right-actions {
+    flex-shrink: 0;
+}
+.modal-idea .modal-header #viewIdeaTitleWrapper {
+    flex: 1;
+    min-width: 0;
 }
 .modal-idea .modal-header h2 {
     font-size: 1.5rem;
@@ -431,29 +474,20 @@ body {
     color: #f0f6fc;
     margin: 0;
     word-break: break-word;
-    flex: 1;
 }
-.modal-idea .modal-header .actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
-}
-.modal-idea .modal-header .actions button {
-    background: none;
+.modal-idea .modal-header #viewIdeaTitleInput {
+    font-size: 1.5rem;
+    font-weight: 600;
+    background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 0.3rem 0.8rem;
-    border-radius: 40px;
-    transition: all 0.2s ease;
-    font-family: "Montserrat", sans-serif;
-    font-weight: 500;
-    border: 1px solid transparent;
-}
-.modal-idea .modal-header .actions button:hover {
+    border-bottom: 2px solid #4a8cff;
     color: #f0f6fc;
-    background: rgba(255, 255, 255, 0.04);
+    padding: 0.2rem 0.5rem;
+    width: 100%;
+    font-family: "Montserrat", sans-serif;
+}
+.modal-idea .modal-header #viewIdeaTitleInput:focus {
+    outline: none;
 }
 .modal-idea .modal-body {
     flex: 1;
@@ -580,25 +614,28 @@ body {
     display: inline-block;
 }
 .btn-more {
-    background: none;
+    background: rgba(255, 255, 255, 0.06);
     border: none;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 1.8rem;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.5rem;
     font-weight: 300;
     cursor: pointer;
-    padding: 0.2rem 0.5rem;
-    border-radius: 8px;
-    transition: background 0.2s ease;
-    line-height: 1;
+    transition: all 0.2s ease;
 }
 .btn-more:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.12);
     color: #f0f6fc;
 }
 .dropdown-menu {
     display: none;
     position: absolute;
-    right: 0;
+    left: 0;
     top: 100%;
     background: #1a1a1a;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -831,9 +868,8 @@ body {
     .modal-idea .modal-header h2 {
         font-size: 1.2rem;
     }
-    .modal-idea .modal-header .actions button {
-        font-size: 0.8rem;
-        padding: 0.2rem 0.6rem;
+    .modal-idea .modal-header #viewIdeaTitleInput {
+        font-size: 1.2rem;
     }
     .main {
         padding: 1rem;
@@ -845,6 +881,16 @@ body {
     .btn-large {
         padding: 0.6rem 1.8rem;
         font-size: 1rem;
+    }
+    .help-bubble {
+        padding: 0.4rem 1rem;
+        min-height: 2.4rem;
+    }
+    .help-bubble .help-text {
+        font-size: 0.85rem;
+    }
+    .modal-idea .modal-header {
+        flex-wrap: wrap;
     }
 }
 @media (min-width: 769px) {
