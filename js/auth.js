@@ -8,7 +8,6 @@ import { getProfile, createDefaultProfile } from './profile.js';
 let isLoginMode = true;
 
 export function initAuth(loginModal, closeLoginModal, loginEmail, loginPassword, loginActionBtn, loginToggleBtn, loginToggleLink, loginModeText, loginTitle, loginBtn, logoutBtn, onAuthChange) {
-    // Toggle entre login y registro
     function toggleLoginMode() {
         isLoginMode = !isLoginMode;
         loginTitle.textContent = isLoginMode ? 'Iniciar sesión' : 'Registrarse';
@@ -69,11 +68,9 @@ export function initAuth(loginModal, closeLoginModal, loginEmail, loginPassword,
         }
     });
 
-    // Escuchar cambios de autenticación y cargar perfil
     supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
             const user = session.user;
-            // Obtener o crear perfil
             let profile = await getProfile(user.id);
             if (!profile) {
                 profile = await createDefaultProfile(user.id);
