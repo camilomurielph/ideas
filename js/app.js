@@ -5,7 +5,7 @@ import { supabase } from './supabase.js';
 import { initAuth } from './auth.js';
 import { loadIdeas, renderIdeaList, createIdea, updateIdea, deleteIdea, getIdeas, getCurrentIdeaId, setCurrentIdeaId } from './ideas.js';
 import { initMic } from './mic.js';
-import { showToast, copyToClipboard, getPlainText } from './ui.js'; // agregamos getPlainText
+import { showToast, copyToClipboard, getPlainText, pasteFromClipboard } from './ui.js';
 
 // ================================================================
 //  DOM REFS
@@ -64,13 +64,18 @@ const nextBtn = $('nextBtn');
 const retryContainer = $('retryContainer');
 const retryBtn = $('retryBtn');
 
+const newIdeaMainBtn = $('newIdeaMainBtn');
+const pasteFromClipboardBtn = $('pasteFromClipboardBtn');
+
 const mainTitle = $('mainTitle');
 
 // ================================================================
 //  ESTADO
 // ================================================================
 let currentUser = null;
-let currentIdea = null; // almacenar la idea que se está viendo
+let currentIdea = null;
+let waitingForGemini = false;
+let lastTranscript = '';
 
 // ================================================================
 //  FUNCIONES DE UI (sidebar, modales)
@@ -102,6 +107,35 @@ document.addEventListener('click', (e) => {
 });
 
 // ================================================================
+//  GUÍA CONTEXTUAL - ESTADOS
+// ================================================================
+function resetGuia() {
+    waitingForGemini = false;
+    newIdeaMainBtn.style.display = 'none';
+    helpText.textContent = '';
+    helpText.className = 'mic-status small';
+    // Restaurar placeholder del modal si está abierto
+    newIdeaContent.placeholder = 'Pega aquí el contenido desarrollado por Gemini...';
+    if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'none';
+}
+
+function showWaitingForGemini() {
+    waitingForGemini = true;
+    helpText.textContent = '📋 ¿Ya tienes el resultado de Gemini? Crea una nueva idea y pégalo.';
+    helpText.className = 'mic-status small';
+    newIdeaMainBtn.style.display = 'block';
+}
+
+// ================================================================
+//  EVENTO DE FOCO PARA DETECTAR REGRESO DE GEMINI
+// ================================================================
+window.addEventListener('focus', () => {
+    if (waitingForGemini) {
+        showWaitingForGemini();
+    }
+});
+
+// ================================================================
 //  MANEJO DEL MENÚ DESPLEGABLE EN EL MODAL
 // ================================================================
 function toggleDropdown(e) {
@@ -109,7 +143,6 @@ function toggleDropdown(e) {
     dropdownMenu.classList.toggle('open');
 }
 
-// Cerrar el menú al hacer clic fuera
 document.addEventListener('click', () => {
     dropdownMenu.classList.remove('open');
 });
@@ -135,7 +168,6 @@ function openViewIdea(idea) {
     viewIdeaModal.classList.add('open');
     dropdownMenu.classList.remove('open');
 
-    // Asignar eventos a las opciones del menú
     editOptionBtn.onclick = (e) => {
         e.stopPropagation();
         dropdownMenu.classList.remove('open');
@@ -247,7 +279,7 @@ function copyPlainText(idea) {
 }
 
 // ================================================================
-//  NUEVA IDEA
+//  NUEVA IDEA - Botón del menú lateral
 // ================================================================
 newIdeaBtn.addEventListener('click', () => {
     if (!currentUser) {
@@ -257,15 +289,37 @@ newIdeaBtn.addEventListener('click', () => {
     newIdeaModal.classList.add('open');
     newIdeaTitle.value = '';
     newIdeaContent.value = '';
+    newIdeaContent.placeholder = 'Pega aquí el contenido desarrollado por Gemini...';
+    if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'none';
     setTimeout(() => newIdeaTitle.focus(), 100);
 });
 
-closeNewIdeaModal.addEventListener('click', () => newIdeaModal.classList.remove('open'));
-cancelNewIdeaBtn.addEventListener('click', () => newIdeaModal.classList.remove('open'));
-newIdeaModal.addEventListener('click', (e) => {
-    if (e.target === newIdeaModal) newIdeaModal.classList.remove('open');
+// ================================================================
+//  NUEVA IDEA - Botón principal (guía contextual)
+// ================================================================
+newIdeaMainBtn.addEventListener('click', () => {
+    if (!currentUser) {
+        showToast('Inicia sesión para guardar ideas', 'warning');
+        return;
+    }
+    newIdeaModal.classList.add('open');
+    newIdeaTitle.value = '';
+    newIdeaContent.value = '';
+    newIdeaContent.placeholder = 'Pega aquí el resultado que generó Gemini...';
+    if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'inline-block';
+    setTimeout(() => newIdeaTitle.focus(), 100);
 });
 
+// ================================================================
+//  BOTÓN PEGAR DESDE PORTAPAPELES
+// ================================================================
+pasteFromClipboardBtn?.addEventListener('click', async () => {
+    await pasteFromClipboard(newIdeaContent);
+});
+
+// ================================================================
+//  GUARDAR IDEA (también resetea la guía)
+// ================================================================
 saveIdeaBtn.addEventListener('click', async () => {
     if (!currentUser) {
         showToast('Inicia sesión para guardar', 'warning');
@@ -281,7 +335,9 @@ saveIdeaBtn.addEventListener('click', async () => {
         await createIdea(title, content, currentUser.id);
         renderIdeaList(ideaList, openViewIdea);
         newIdeaModal.classList.remove('open');
-        showToast('✅ Idea guardada', 'success');
+        showToast('✅ Idea guardada. Puedes grabar otra idea.', 'success', 3000);
+        // Resetear guía
+        resetGuia();
     } catch (err) {
         showToast('Error: ' + err.message, 'error');
     }
@@ -335,6 +391,7 @@ function onAuthChange(user) {
         </div>`;
         viewIdeaModal.classList.remove('open');
         currentIdea = null;
+        resetGuia();
     }
 }
 
@@ -342,12 +399,18 @@ function onAuthChange(user) {
 initAuth(loginModal, closeLoginModal, loginEmail, loginPassword, loginActionBtn, loginToggleBtn, loginToggleLink, loginModeText, loginTitle, loginBtn, logoutBtn, onAuthChange);
 
 // ================================================================
-//  INICIALIZAR MICRÓFONO (sin toggle)
+//  INICIALIZAR MICRÓFONO CON CALLBACK
 // ================================================================
-initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn);
+function onNextCallback(transcription) {
+    lastTranscript = transcription;
+    showWaitingForGemini();
+}
+
+initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback);
 
 // ================================================================
 //  INICIO
 // ================================================================
+resetGuia();
 showToast('Bienvenido a ideas', 'info', 3000);
-console.log('🎙️ ideas app v11.0 - con menú de opciones y sin toggle');
+console.log('🎙️ ideas app v11.0 - con guía contextual');
