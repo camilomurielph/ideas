@@ -1,5 +1,4 @@
-import { showToast, copyToClipboard } from './ui.js';
-import { getAIUrl } from './profile.js';
+import { showToast, copyToClipboard, openAI } from './ui.js';
 
 // ================================================================
 //  MICRÓFONO Y TRANSCRIPCIÓN
@@ -9,7 +8,6 @@ let recognition = null;
 let transcript = "";
 let finalTranscript = "";
 let isStoppedByUser = false;
-let currentAI = 'Gemini';
 
 // Prompt fijo: Markdown
 const PROMPT = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
@@ -32,12 +30,6 @@ Transcripción:`;
 
 export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback, getAI) {
     // getAI es una función que devuelve el nombre de la IA actual
-
-    function openAI() {
-        const aiName = getAI ? getAI() : 'Gemini';
-        const url = getAIUrl(aiName);
-        window.open(url, '_blank');
-    }
 
     function startRecognition() {
         try {
@@ -225,7 +217,6 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         }
         nextBtnContainer.classList.remove('visible');
         retryContainer.style.display = 'none';
-        // Restaurar mensaje inicial en burbuja
         helpText.innerHTML = '💡 Explícame tu idea con lujo de detalles';
     }
 
@@ -242,7 +233,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
                 const aiName = getAI ? getAI() : 'Gemini';
                 showToast(`✅ Prompt copiado al portapapeles. Abriendo ${aiName}...`, 'success', 3000);
                 if (onNextCallback) onNextCallback(text);
-                openAI();
+                openAI(aiName); // Ahora usa la función importada
             })
             .catch((err) => {
                 console.error('Error al copiar:', err);
