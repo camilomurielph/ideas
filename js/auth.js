@@ -1,4 +1,4 @@
-import { supabase } from './app.js';
+import { supabase } from './supabase.js';
 import { showToast } from './ui.js';
 
 // ================================================================
