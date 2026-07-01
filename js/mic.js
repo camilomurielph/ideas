@@ -28,8 +28,8 @@ Al final de todo el desarrollo, y **solo al final**, añade una sección llamada
 
 Transcripción:`;
 
-export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn) {
-    // Ya no recibimos toggleSwitch ni toggleLabel
+export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback) {
+    // onNextCallback se ejecutará cuando se presione "Siguiente"
 
     function startRecognition() {
         try {
@@ -54,6 +54,8 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
                 micStatus.className = 'mic-status recording';
                 retryContainer.style.display = 'none';
                 nextBtnContainer.classList.remove('visible');
+                helpText.textContent = '⏹️ Grabando... toca de nuevo para detener';
+                helpText.className = 'mic-status small';
                 showToast('🎤 Grabando...', 'info', 2000);
             };
 
@@ -96,6 +98,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
                         transcriptContent.textContent = finalTranscript.trim();
                         nextBtnContainer.classList.add('visible');
                     }
+                    helpText.textContent = '';
                 } else if (errorMsg === 'not-allowed') {
                     showToast('❌ Permiso denegado. Concede acceso al micrófono.', 'error', 5000);
                     micStatus.textContent = '🚫 Permiso denegado';
@@ -128,6 +131,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
                             transcriptContent.textContent = finalTranscript.trim();
                             nextBtnContainer.classList.add('visible');
                         }
+                        helpText.textContent = '';
                     }
                 } else if (isStoppedByUser) {
                     handleStop();
@@ -182,6 +186,8 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
             transcriptContent.textContent = finalText;
             nextBtnContainer.classList.add('visible');
             transcript = finalText;
+            helpText.textContent = '✅ Transcripción lista. Pulsa **Siguiente** para copiar el texto y abrir Gemini.';
+            helpText.className = 'mic-status small';
             showToast('✅ Transcripción lista', 'success', 2000);
         } else {
             showToast('No se captó ninguna palabra', 'error', 3000);
@@ -212,6 +218,8 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         }
         nextBtnContainer.classList.remove('visible');
         retryContainer.style.display = 'none';
+        helpText.textContent = '';
+        helpText.className = 'mic-status small';
     }
 
     function handleNext() {
@@ -225,6 +233,8 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         copyToClipboard(fullText)
             .then(() => {
                 showToast('✅ Prompt copiado al portapapeles', 'success', 3000);
+                // Llamar al callback antes de abrir Gemini
+                if (onNextCallback) onNextCallback(text);
                 openGemini();
             })
             .catch((err) => {
