@@ -1,11 +1,11 @@
 // ================================================================
 //  PUNTO DE ENTRADA DE LA APLICACIÓN
 // ================================================================
-import { supabase } from './supabase.js';  // Solo para asegurar que se cargue
+import { supabase } from './supabase.js';
 import { initAuth } from './auth.js';
 import { loadIdeas, renderIdeaList, createIdea, updateIdea, deleteIdea, getIdeas, getCurrentIdeaId, setCurrentIdeaId } from './ideas.js';
 import { initMic } from './mic.js';
-import { showToast } from './ui.js';
+import { showToast, copyToClipboard, getPlainText } from './ui.js'; // agregamos getPlainText
 
 // ================================================================
 //  DOM REFS
@@ -45,8 +45,12 @@ const viewIdeaPreview = $('viewIdeaPreview');
 const viewIdeaEditor = $('viewIdeaEditor');
 const viewIdeaBody = $('viewIdeaBody');
 const viewIdeaFooter = $('viewIdeaFooter');
-const editIdeaBtn = $('editIdeaBtn');
-const deleteIdeaBtn = $('deleteIdeaBtn');
+const moreOptionsBtn = $('moreOptionsBtn');
+const dropdownMenu = $('dropdownMenu');
+const editOptionBtn = $('editOptionBtn');
+const deleteOptionBtn = $('deleteOptionBtn');
+const copyMdOptionBtn = $('copyMdOptionBtn');
+const copyPlainOptionBtn = $('copyPlainOptionBtn');
 const cancelEditIdeaBtn = $('cancelEditIdeaBtn');
 const updateIdeaBtn = $('updateIdeaBtn');
 
@@ -59,8 +63,6 @@ const nextBtnContainer = $('nextBtnContainer');
 const nextBtn = $('nextBtn');
 const retryContainer = $('retryContainer');
 const retryBtn = $('retryBtn');
-const toggleSwitch = $('toggleSwitch');
-const toggleLabel = $('toggleLabel');
 
 const mainTitle = $('mainTitle');
 
@@ -68,6 +70,7 @@ const mainTitle = $('mainTitle');
 //  ESTADO
 // ================================================================
 let currentUser = null;
+let currentIdea = null; // almacenar la idea que se está viendo
 
 // ================================================================
 //  FUNCIONES DE UI (sidebar, modales)
@@ -99,11 +102,27 @@ document.addEventListener('click', (e) => {
 });
 
 // ================================================================
-//  MANEJO DE IDEA (VER, EDITAR, ELIMINAR)
+//  MANEJO DEL MENÚ DESPLEGABLE EN EL MODAL
+// ================================================================
+function toggleDropdown(e) {
+    e.stopPropagation();
+    dropdownMenu.classList.toggle('open');
+}
+
+// Cerrar el menú al hacer clic fuera
+document.addEventListener('click', () => {
+    dropdownMenu.classList.remove('open');
+});
+
+moreOptionsBtn.addEventListener('click', toggleDropdown);
+
+// ================================================================
+//  MANEJO DE IDEA (VER, EDITAR, ELIMINAR, COPIAR)
 // ================================================================
 let isEditing = false;
 
 function openViewIdea(idea) {
+    currentIdea = idea;
     setCurrentIdeaId(idea.id);
     viewIdeaTitle.textContent = idea.title || 'Sin título';
     viewIdeaPreview.innerHTML = marked.parse(idea.content || '');
@@ -112,12 +131,31 @@ function openViewIdea(idea) {
     viewIdeaPreview.style.display = 'block';
     viewIdeaFooter.style.display = 'none';
     isEditing = false;
-    editIdeaBtn.textContent = '✏️ Editar';
+    editOptionBtn.textContent = '✏️ Editar';
     viewIdeaModal.classList.add('open');
+    dropdownMenu.classList.remove('open');
 
-    // Asignar eventos (se reasignan cada vez que se abre)
-    editIdeaBtn.onclick = () => enterEditMode(idea);
-    deleteIdeaBtn.onclick = () => handleDeleteIdea(idea.id);
+    // Asignar eventos a las opciones del menú
+    editOptionBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('open');
+        enterEditMode(idea);
+    };
+    deleteOptionBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('open');
+        handleDeleteIdea(idea.id);
+    };
+    copyMdOptionBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('open');
+        copyMarkdown(idea);
+    };
+    copyPlainOptionBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('open');
+        copyPlainText(idea);
+    };
     cancelEditIdeaBtn.onclick = () => cancelEdit(idea);
     updateIdeaBtn.onclick = () => handleUpdateIdea(idea.id);
 }
@@ -127,8 +165,12 @@ function enterEditMode(idea) {
     viewIdeaEditor.style.display = 'block';
     viewIdeaPreview.style.display = 'none';
     viewIdeaFooter.style.display = 'flex';
-    editIdeaBtn.textContent = '👁️ Ver';
-    editIdeaBtn.onclick = () => cancelEdit(idea);
+    editOptionBtn.textContent = '👁️ Ver';
+    editOptionBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('open');
+        cancelEdit(idea);
+    };
     viewIdeaEditor.focus();
 }
 
@@ -137,8 +179,12 @@ function cancelEdit(idea) {
     viewIdeaEditor.style.display = 'none';
     viewIdeaPreview.style.display = 'block';
     viewIdeaFooter.style.display = 'none';
-    editIdeaBtn.textContent = '✏️ Editar';
-    editIdeaBtn.onclick = () => enterEditMode(idea);
+    editOptionBtn.textContent = '✏️ Editar';
+    editOptionBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('open');
+        enterEditMode(idea);
+    };
     viewIdeaPreview.innerHTML = marked.parse(idea.content || '');
     viewIdeaEditor.value = idea.content || '';
 }
@@ -152,13 +198,13 @@ async function handleUpdateIdea(id) {
     const newTitle = viewIdeaTitle.textContent.trim() || 'Sin título';
     try {
         await updateIdea(id, newTitle, newContent);
-        // Actualizar la lista y el modal
         const updatedIdea = getIdeas().find(i => i.id === id);
         if (updatedIdea) {
             viewIdeaTitle.textContent = updatedIdea.title;
             viewIdeaPreview.innerHTML = marked.parse(updatedIdea.content || '');
             viewIdeaEditor.value = updatedIdea.content || '';
             cancelEdit(updatedIdea);
+            currentIdea = updatedIdea;
         }
         renderIdeaList(ideaList, openViewIdea);
         showToast('✅ Idea actualizada', 'success');
@@ -174,10 +220,30 @@ async function handleDeleteIdea(id) {
         renderIdeaList(ideaList, openViewIdea);
         viewIdeaModal.classList.remove('open');
         setCurrentIdeaId(null);
+        currentIdea = null;
         showToast('🗑️ Idea eliminada', 'info');
     } catch (err) {
         showToast('Error al eliminar: ' + err.message, 'error');
     }
+}
+
+function copyMarkdown(idea) {
+    const text = `# ${idea.title || 'Sin título'}\n\n${idea.content || ''}`;
+    copyToClipboard(text).then(() => {
+        showToast('📋 Copiado en formato Markdown', 'success');
+    }).catch(() => {
+        showToast('No se pudo copiar', 'error');
+    });
+}
+
+function copyPlainText(idea) {
+    const plain = getPlainText(idea.content || '');
+    const text = `${idea.title || 'Sin título'}\n\n${plain}`;
+    copyToClipboard(text).then(() => {
+        showToast('📄 Copiado sin formato', 'success');
+    }).catch(() => {
+        showToast('No se pudo copiar', 'error');
+    });
 }
 
 // ================================================================
@@ -227,11 +293,13 @@ saveIdeaBtn.addEventListener('click', async () => {
 closeViewIdeaModal.addEventListener('click', () => {
     viewIdeaModal.classList.remove('open');
     setCurrentIdeaId(null);
+    currentIdea = null;
 });
 viewIdeaModal.addEventListener('click', (e) => {
     if (e.target === viewIdeaModal) {
         viewIdeaModal.classList.remove('open');
         setCurrentIdeaId(null);
+        currentIdea = null;
     }
 });
 
@@ -249,7 +317,6 @@ function onAuthChange(user) {
         `;
         sidebar.style.display = 'flex';
         mainTitle.textContent = '🎙️ ideas';
-        // Cargar ideas y renderizar
         loadIdeas(user.id).then(() => {
             renderIdeaList(ideaList, openViewIdea);
         });
@@ -263,11 +330,11 @@ function onAuthChange(user) {
         sidebar.classList.remove('open');
         sidebarOverlay.classList.remove('open');
         mainTitle.textContent = '🎙️ ideas';
-        // Limpiar lista
         ideaList.innerHTML = `<div style="color: rgba(255,255,255,0.2); text-align: center; padding: 2rem 0; font-size: 0.9rem;">
             No hay ideas aún.<br />Crea tu primera idea.
         </div>`;
         viewIdeaModal.classList.remove('open');
+        currentIdea = null;
     }
 }
 
@@ -275,12 +342,12 @@ function onAuthChange(user) {
 initAuth(loginModal, closeLoginModal, loginEmail, loginPassword, loginActionBtn, loginToggleBtn, loginToggleLink, loginModeText, loginTitle, loginBtn, logoutBtn, onAuthChange);
 
 // ================================================================
-//  INICIALIZAR MICRÓFONO
+//  INICIALIZAR MICRÓFONO (sin toggle)
 // ================================================================
-initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, toggleSwitch, toggleLabel);
+initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn);
 
 // ================================================================
 //  INICIO
 // ================================================================
 showToast('Bienvenido a ideas', 'info', 3000);
-console.log('🎙️ ideas app v10.0 - modularizada');
+console.log('🎙️ ideas app v11.0 - con menú de opciones y sin toggle');
