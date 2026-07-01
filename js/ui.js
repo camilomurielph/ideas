@@ -77,16 +77,12 @@ export function openAI(aiName) {
     };
     const webUrl = urls[aiName] || urls['Gemini'];
 
-    // Para iPhone, intentar abrir la app nativa (solo Gemini tiene esquema conocido)
     if (isIPhone && aiName === 'Gemini') {
         const appScheme = "googlegemini://";
-        // Intentar abrir app
         const win = window.open(appScheme, "_blank");
-        // Fallback a web si no se abre
         const fallbackTimer = setTimeout(() => {
             window.open(webUrl, "_blank");
         }, 1500);
-        // Si la ventana se cierra, asumimos que la app se abrió
         const checkClosed = setInterval(() => {
             if (win && win.closed) {
                 clearTimeout(fallbackTimer);
@@ -97,7 +93,6 @@ export function openAI(aiName) {
             clearInterval(checkClosed);
         }, 3000);
     } else {
-        // Resto de dispositivos o IAs: abrir web
         window.open(webUrl, "_blank");
     }
 }
