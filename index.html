@@ -80,8 +80,8 @@
             <div class="modal modal-content">
                 <button class="close-modal" id="closeViewIdeaModal">&times;</button>
                 <div class="modal-header">
-                    <h2 id="viewIdeaTitle">Título</h2>
-                    <div class="actions">
+                    <!-- Botón de más opciones a la izquierda -->
+                    <div class="left-actions">
                         <div class="dropdown">
                             <button class="btn-more" id="moreOptionsBtn">⋯</button>
                             <div class="dropdown-menu" id="dropdownMenu">
@@ -91,6 +91,14 @@
                                 <button class="dropdown-item" id="copyPlainOptionBtn">📄 Copiar sin formato</button>
                             </div>
                         </div>
+                    </div>
+                    <!-- Título editable (input o h2 según modo) -->
+                    <div id="viewIdeaTitleWrapper">
+                        <h2 id="viewIdeaTitle">Título</h2>
+                        <input type="text" id="viewIdeaTitleInput" style="display: none; font-size: 1.5rem; font-weight: 600; background: transparent; border: none; border-bottom: 2px solid #4a8cff; color: #f0f6fc; padding: 0.2rem 0.5rem; width: 100%;" />
+                    </div>
+                    <div class="right-actions">
+                        <!-- Espacio para futuros botones, si los hay -->
                     </div>
                 </div>
                 <div class="modal-body" id="viewIdeaBody">
@@ -140,7 +148,10 @@
                     <div class="mic-container">
                         <button class="mic-btn" id="micBtn" title="Grabar / Detener">🎤</button>
                         <div class="mic-status" id="micStatus">Toca el micrófono para empezar</div>
-                        <div class="mic-status small" id="helpText"></div>
+                        <!-- Mensaje de ayuda contextual con fondo azul -->
+                        <div class="help-bubble" id="helpBubble">
+                            <div class="help-text" id="helpText"></div>
+                        </div>
                     </div>
 
                     <div class="transcript-area" id="transcriptArea">
