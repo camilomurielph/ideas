@@ -80,9 +80,17 @@
                 <button class="close-modal" id="closeViewIdeaModal">&times;</button>
                 <div class="modal-header">
                     <h2 id="viewIdeaTitle">Título</h2>
+                    <!-- Botón de tres puntos con menú desplegable -->
                     <div class="actions">
-                        <button class="btn-edit" id="editIdeaBtn">✏️ Editar</button>
-                        <button class="btn-delete" id="deleteIdeaBtn">🗑️ Eliminar</button>
+                        <div class="dropdown">
+                            <button class="btn-more" id="moreOptionsBtn">⋯</button>
+                            <div class="dropdown-menu" id="dropdownMenu">
+                                <button class="dropdown-item" id="editOptionBtn">✏️ Editar</button>
+                                <button class="dropdown-item" id="deleteOptionBtn">🗑️ Eliminar</button>
+                                <button class="dropdown-item" id="copyMdOptionBtn">📋 Copiar .md</button>
+                                <button class="dropdown-item" id="copyPlainOptionBtn">📄 Copiar sin formato</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-body" id="viewIdeaBody">
@@ -141,13 +149,7 @@
                     </div>
 
                     <div class="actions-row">
-                        <div class="toggle-container">
-                            <span class="toggle-label active" id="toggleLabel">Markdown</span>
-                            <div class="toggle-switch active" id="toggleSwitch">
-                                <div class="slider"></div>
-                            </div>
-                        </div>
-
+                        <!-- Eliminado el toggle de Markdown -->
                         <div class="next-btn-container" id="nextBtnContainer">
                             <button class="btn-next" id="nextBtn">➡️ Siguiente</button>
                         </div>
