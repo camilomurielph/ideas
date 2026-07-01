@@ -65,12 +65,24 @@ export function openGemini() {
     }
 }
 
-// Nueva función: obtener texto plano a partir de markdown
 export function getPlainText(markdown) {
     if (!markdown) return '';
-    // Convertir a HTML con marked, luego extraer texto
     const html = marked.parse(markdown);
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     return tempDiv.textContent || '';
+}
+
+export async function pasteFromClipboard(targetElement) {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+            targetElement.value = text;
+            showToast('📋 Texto pegado', 'success');
+        } else {
+            showToast('El portapapeles está vacío', 'warning');
+        }
+    } catch (err) {
+        showToast('No se pudo acceder al portapapeles: ' + err.message, 'error');
+    }
 }
