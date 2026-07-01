@@ -54,6 +54,26 @@
             </div>
         </div>
 
+        <!-- ===== MODAL CONFIGURACIÓN ===== -->
+        <div class="modal-overlay" id="configModal">
+            <div class="modal">
+                <button class="close-modal" id="closeConfigModal">&times;</button>
+                <h2>⚙️ Configurar cuenta</h2>
+                <div class="field">
+                    <label for="aiSelect">¿Qué IA quieres usar?</label>
+                    <select id="aiSelect">
+                        <option value="Gemini">Gemini</option>
+                        <option value="Deepseek">Deepseek</option>
+                        <option value="Claude">Claude</option>
+                        <option value="ChatGPT">ChatGPT</option>
+                    </select>
+                </div>
+                <div class="actions">
+                    <button class="btn-primary" id="saveConfigBtn">Guardar preferencia</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== MODAL NUEVA IDEA ===== -->
         <div class="modal-overlay modal-new-idea" id="newIdeaModal">
             <div class="modal">
@@ -80,7 +100,6 @@
             <div class="modal modal-content">
                 <button class="close-modal" id="closeViewIdeaModal">&times;</button>
                 <div class="modal-header">
-                    <!-- Botón de más opciones a la izquierda -->
                     <div class="left-actions">
                         <div class="dropdown">
                             <button class="btn-more" id="moreOptionsBtn">⋯</button>
@@ -92,14 +111,11 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Título editable (input o h2 según modo) -->
                     <div id="viewIdeaTitleWrapper">
                         <h2 id="viewIdeaTitle">Título</h2>
                         <input type="text" id="viewIdeaTitleInput" style="display: none; font-size: 1.5rem; font-weight: 600; background: transparent; border: none; border-bottom: 2px solid #4a8cff; color: #f0f6fc; padding: 0.2rem 0.5rem; width: 100%;" />
                     </div>
-                    <div class="right-actions">
-                        <!-- Espacio para futuros botones, si los hay -->
-                    </div>
+                    <div class="right-actions"></div>
                 </div>
                 <div class="modal-body" id="viewIdeaBody">
                     <div class="preview" id="viewIdeaPreview"></div>
@@ -126,7 +142,8 @@
                     </div>
                 </div>
                 <div class="sidebar-footer">
-                    <span id="userEmailDisplay">usuario@email.com</span>
+                    <!-- Se ha eliminado el correo -->
+                    <button class="btn-config" id="configBtn">⚙️ Configurar cuenta</button>
                     <button class="btn-logout" id="logoutBtn">Cerrar sesión</button>
                 </div>
             </aside>
@@ -148,7 +165,6 @@
                     <div class="mic-container">
                         <button class="mic-btn" id="micBtn" title="Grabar / Detener">🎤</button>
                         <div class="mic-status" id="micStatus">Toca el micrófono para empezar</div>
-                        <!-- Mensaje de ayuda contextual con fondo azul -->
                         <div class="help-bubble" id="helpBubble">
                             <div class="help-text" id="helpText"></div>
                         </div>
@@ -163,13 +179,11 @@
                         <div class="next-btn-container" id="nextBtnContainer">
                             <button class="btn-next" id="nextBtn">➡️ Siguiente</button>
                         </div>
-
                         <div class="next-btn-container" id="retryContainer" style="display: none;">
                             <button class="btn-retry" id="retryBtn">🔄 Reintentar</button>
                         </div>
                     </div>
 
-                    <!-- Botón principal "Nueva idea" (visible solo en ciertos estados) -->
                     <div class="main-action-btn" id="newIdeaMainBtn" style="display: none;">
                         <button class="btn-primary btn-large">➕ Nueva idea</button>
                     </div>
