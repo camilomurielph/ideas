@@ -3,11 +3,16 @@ import { showToast } from './ui.js';
 import { getProfile, createDefaultProfile } from './profile.js';
 
 // ================================================================
-//  AUTENTICACIÓN
+//  AUTENTICACIÓN CON PERSISTENCIA
 // ================================================================
 let isLoginMode = true;
+let authInitialized = false;
 
 export function initAuth(loginModal, closeLoginModal, loginEmail, loginPassword, loginActionBtn, loginToggleBtn, loginToggleLink, loginModeText, loginTitle, loginBtn, logoutBtn, onAuthChange) {
+    
+    // Ya no se reinicia el estado de auth al recargar porque supabase maneja la sesión
+    // Solo configuramos los listeners una vez
+
     function toggleLoginMode() {
         isLoginMode = !isLoginMode;
         loginTitle.textContent = isLoginMode ? 'Iniciar sesión' : 'Registrarse';
@@ -68,20 +73,24 @@ export function initAuth(loginModal, closeLoginModal, loginEmail, loginPassword,
         }
     });
 
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session) {
-            const user = session.user;
-            let profile = await getProfile(user.id);
-            if (!profile) {
-                profile = await createDefaultProfile(user.id);
-            }
-            if (profile) {
-                onAuthChange(user, profile.ai_preference);
+    // Escuchar cambios de autenticación solo una vez
+    if (!authInitialized) {
+        authInitialized = true;
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session) {
+                const user = session.user;
+                let profile = await getProfile(user.id);
+                if (!profile) {
+                    profile = await createDefaultProfile(user.id);
+                }
+                if (profile) {
+                    onAuthChange(user, profile.ai_preference);
+                } else {
+                    onAuthChange(user, 'Gemini');
+                }
             } else {
-                onAuthChange(user, 'Gemini');
+                onAuthChange(null, 'Gemini');
             }
-        } else {
-            onAuthChange(null, 'Gemini');
-        }
-    });
+        });
+    }
 }
