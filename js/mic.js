@@ -9,7 +9,6 @@ let transcript = "";
 let finalTranscript = "";
 let isStoppedByUser = false;
 
-// Prompt fijo: Markdown
 const PROMPT = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
 
 Reglas estrictas que debes seguir:
@@ -29,7 +28,6 @@ Al final de todo el desarrollo, y **solo al final**, añade una sección llamada
 Transcripción:`;
 
 export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback, getAI) {
-    // getAI es una función que devuelve el nombre de la IA actual
 
     function startRecognition() {
         try {
@@ -233,7 +231,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
                 const aiName = getAI ? getAI() : 'Gemini';
                 showToast(`✅ Prompt copiado al portapapeles. Abriendo ${aiName}...`, 'success', 3000);
                 if (onNextCallback) onNextCallback(text);
-                openAI(aiName); // Ahora usa la función importada
+                openAI(aiName);
             })
             .catch((err) => {
                 console.error('Error al copiar:', err);
@@ -247,10 +245,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         startRecognition();
     }
 
-    // Establecer mensaje inicial
     resetUI();
-
-    // Asignar eventos
     micBtn.addEventListener('click', toggleRecording);
     nextBtn.addEventListener('click', handleNext);
     retryBtn.addEventListener('click', handleRetry);
