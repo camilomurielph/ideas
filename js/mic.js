@@ -1,4 +1,5 @@
-import { showToast, copyToClipboard, openGemini } from './ui.js';
+import { showToast, copyToClipboard } from './ui.js';
+import { getAIUrl } from './profile.js';
 
 // ================================================================
 //  MICRÓFONO Y TRANSCRIPCIÓN
@@ -8,6 +9,7 @@ let recognition = null;
 let transcript = "";
 let finalTranscript = "";
 let isStoppedByUser = false;
+let currentAI = 'Gemini';
 
 // Prompt fijo: Markdown
 const PROMPT = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
@@ -28,8 +30,14 @@ Al final de todo el desarrollo, y **solo al final**, añade una sección llamada
 
 Transcripción:`;
 
-export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback) {
-    // onNextCallback se ejecutará cuando se presione "Siguiente"
+export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback, getAI) {
+    // getAI es una función que devuelve el nombre de la IA actual
+
+    function openAI() {
+        const aiName = getAI ? getAI() : 'Gemini';
+        const url = getAIUrl(aiName);
+        window.open(url, '_blank');
+    }
 
     function startRecognition() {
         try {
@@ -54,8 +62,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
                 micStatus.className = 'mic-status recording';
                 retryContainer.style.display = 'none';
                 nextBtnContainer.classList.remove('visible');
-                // Mostrar mensaje en helpText
-                helpText.innerHTML = '⏹️ Grabando... toca de nuevo para detener';
+                helpText.innerHTML = '📝 Cuéntame tu idea';
                 showToast('🎤 Grabando...', 'info', 2000);
             };
 
@@ -186,8 +193,8 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
             transcriptContent.textContent = finalText;
             nextBtnContainer.classList.add('visible');
             transcript = finalText;
-            // Mensaje con salto de línea y negrita (usando HTML)
-            helpText.innerHTML = '✅ Transcripción lista.<br /><strong>Pulsa "Siguiente" para copiar el texto y abrir Gemini.</strong>';
+            const aiName = getAI ? getAI() : 'Gemini';
+            helpText.innerHTML = `✅ Transcripción lista.<br /><strong>Pulsa "Siguiente" para copiar el texto y abrir ${aiName}.</strong>`;
             showToast('✅ Transcripción lista', 'success', 2000);
         } else {
             showToast('No se captó ninguna palabra', 'error', 3000);
@@ -218,7 +225,8 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         }
         nextBtnContainer.classList.remove('visible');
         retryContainer.style.display = 'none';
-        helpText.innerHTML = '';
+        // Restaurar mensaje inicial en burbuja
+        helpText.innerHTML = '💡 Explícame tu idea con lujo de detalles';
     }
 
     function handleNext() {
@@ -231,9 +239,10 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         const fullText = PROMPT + '\n\n' + text;
         copyToClipboard(fullText)
             .then(() => {
-                showToast('✅ Prompt copiado al portapapeles', 'success', 3000);
+                const aiName = getAI ? getAI() : 'Gemini';
+                showToast(`✅ Prompt copiado al portapapeles. Abriendo ${aiName}...`, 'success', 3000);
                 if (onNextCallback) onNextCallback(text);
-                openGemini();
+                openAI();
             })
             .catch((err) => {
                 console.error('Error al copiar:', err);
@@ -246,6 +255,9 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         retryContainer.style.display = 'none';
         startRecognition();
     }
+
+    // Establecer mensaje inicial
+    resetUI();
 
     // Asignar eventos
     micBtn.addEventListener('click', toggleRecording);
