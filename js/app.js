@@ -41,9 +41,9 @@ const cancelNewIdeaBtn = $('cancelNewIdeaBtn');
 const viewIdeaModal = $('viewIdeaModal');
 const closeViewIdeaModal = $('closeViewIdeaModal');
 const viewIdeaTitle = $('viewIdeaTitle');
+const viewIdeaTitleInput = $('viewIdeaTitleInput');
 const viewIdeaPreview = $('viewIdeaPreview');
 const viewIdeaEditor = $('viewIdeaEditor');
-const viewIdeaBody = $('viewIdeaBody');
 const viewIdeaFooter = $('viewIdeaFooter');
 const moreOptionsBtn = $('moreOptionsBtn');
 const dropdownMenu = $('dropdownMenu');
@@ -112,8 +112,7 @@ document.addEventListener('click', (e) => {
 function resetGuia() {
     waitingForGemini = false;
     newIdeaMainBtn.style.display = 'none';
-    helpText.textContent = '';
-    helpText.className = 'mic-status small';
+    helpText.innerHTML = '';
     // Restaurar placeholder del modal si está abierto
     newIdeaContent.placeholder = 'Pega aquí el contenido desarrollado por Gemini...';
     if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'none';
@@ -121,8 +120,7 @@ function resetGuia() {
 
 function showWaitingForGemini() {
     waitingForGemini = true;
-    helpText.textContent = '📋 ¿Ya tienes el resultado de Gemini? Crea una nueva idea y pégalo.';
-    helpText.className = 'mic-status small';
+    helpText.innerHTML = '📋 ¿Ya tienes el resultado de Gemini? Crea una nueva idea y pégalo.';
     newIdeaMainBtn.style.display = 'block';
 }
 
@@ -150,6 +148,23 @@ document.addEventListener('click', () => {
 moreOptionsBtn.addEventListener('click', toggleDropdown);
 
 // ================================================================
+//  GENERAR TÍTULO POR DEFECTO
+// ================================================================
+function getNextDefaultTitle() {
+    const ideas = getIdeas();
+    if (!ideas || ideas.length === 0) return 'Idea 01';
+    const numbers = ideas
+        .map(idea => {
+            const match = idea.title.match(/^Idea (\d+)$/);
+            return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(n => n > 0);
+    const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
+    const nextNum = maxNum + 1;
+    return `Idea ${String(nextNum).padStart(2, '0')}`;
+}
+
+// ================================================================
 //  MANEJO DE IDEA (VER, EDITAR, ELIMINAR, COPIAR)
 // ================================================================
 let isEditing = false;
@@ -157,7 +172,10 @@ let isEditing = false;
 function openViewIdea(idea) {
     currentIdea = idea;
     setCurrentIdeaId(idea.id);
+    // Mostrar título en h2, ocultar input
     viewIdeaTitle.textContent = idea.title || 'Sin título';
+    viewIdeaTitle.style.display = 'block';
+    viewIdeaTitleInput.style.display = 'none';
     viewIdeaPreview.innerHTML = marked.parse(idea.content || '');
     viewIdeaEditor.value = idea.content || '';
     viewIdeaEditor.style.display = 'none';
@@ -194,6 +212,10 @@ function openViewIdea(idea) {
 
 function enterEditMode(idea) {
     isEditing = true;
+    // Mostrar input de título, ocultar h2
+    viewIdeaTitle.style.display = 'none';
+    viewIdeaTitleInput.style.display = 'block';
+    viewIdeaTitleInput.value = idea.title || 'Sin título';
     viewIdeaEditor.style.display = 'block';
     viewIdeaPreview.style.display = 'none';
     viewIdeaFooter.style.display = 'flex';
@@ -208,6 +230,8 @@ function enterEditMode(idea) {
 
 function cancelEdit(idea) {
     isEditing = false;
+    viewIdeaTitle.style.display = 'block';
+    viewIdeaTitleInput.style.display = 'none';
     viewIdeaEditor.style.display = 'none';
     viewIdeaPreview.style.display = 'block';
     viewIdeaFooter.style.display = 'none';
@@ -227,12 +251,13 @@ async function handleUpdateIdea(id) {
         showToast('El contenido no puede estar vacío', 'warning');
         return;
     }
-    const newTitle = viewIdeaTitle.textContent.trim() || 'Sin título';
+    const newTitle = viewIdeaTitleInput.value.trim() || 'Sin título';
     try {
         await updateIdea(id, newTitle, newContent);
         const updatedIdea = getIdeas().find(i => i.id === id);
         if (updatedIdea) {
             viewIdeaTitle.textContent = updatedIdea.title;
+            viewIdeaTitleInput.value = updatedIdea.title;
             viewIdeaPreview.innerHTML = marked.parse(updatedIdea.content || '');
             viewIdeaEditor.value = updatedIdea.content || '';
             cancelEdit(updatedIdea);
@@ -287,7 +312,7 @@ newIdeaBtn.addEventListener('click', () => {
         return;
     }
     newIdeaModal.classList.add('open');
-    newIdeaTitle.value = '';
+    newIdeaTitle.value = getNextDefaultTitle();
     newIdeaContent.value = '';
     newIdeaContent.placeholder = 'Pega aquí el contenido desarrollado por Gemini...';
     if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'none';
@@ -303,7 +328,7 @@ newIdeaMainBtn.addEventListener('click', () => {
         return;
     }
     newIdeaModal.classList.add('open');
-    newIdeaTitle.value = '';
+    newIdeaTitle.value = getNextDefaultTitle();
     newIdeaContent.value = '';
     newIdeaContent.placeholder = 'Pega aquí el resultado que generó Gemini...';
     if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'inline-block';
@@ -336,11 +361,19 @@ saveIdeaBtn.addEventListener('click', async () => {
         renderIdeaList(ideaList, openViewIdea);
         newIdeaModal.classList.remove('open');
         showToast('✅ Idea guardada. Puedes grabar otra idea.', 'success', 3000);
-        // Resetear guía
         resetGuia();
     } catch (err) {
         showToast('Error: ' + err.message, 'error');
     }
+});
+
+// ================================================================
+//  CERRAR MODAL NUEVA IDEA
+// ================================================================
+closeNewIdeaModal.addEventListener('click', () => newIdeaModal.classList.remove('open'));
+cancelNewIdeaBtn.addEventListener('click', () => newIdeaModal.classList.remove('open'));
+newIdeaModal.addEventListener('click', (e) => {
+    if (e.target === newIdeaModal) newIdeaModal.classList.remove('open');
 });
 
 // ================================================================
@@ -413,4 +446,4 @@ initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnC
 // ================================================================
 resetGuia();
 showToast('Bienvenido a ideas', 'info', 3000);
-console.log('🎙️ ideas app v11.0 - con guía contextual');
+console.log('🎙️ ideas app v11.0 - con guía contextual y mejoras UI');
