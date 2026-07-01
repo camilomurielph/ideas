@@ -63,9 +63,10 @@
                     <label>Título</label>
                     <input type="text" id="newIdeaTitle" placeholder="Mi idea..." />
                 </div>
-                <div class="field">
+                <div class="field" style="position: relative;">
                     <label>Contenido (Markdown)</label>
                     <textarea id="newIdeaContent" placeholder="Pega aquí el contenido desarrollado por Gemini..."></textarea>
+                    <button id="pasteFromClipboardBtn" class="btn-paste" style="display: none;">📋 Pegar</button>
                 </div>
                 <div class="actions">
                     <button class="btn-primary" id="saveIdeaBtn">Guardar idea</button>
@@ -80,7 +81,6 @@
                 <button class="close-modal" id="closeViewIdeaModal">&times;</button>
                 <div class="modal-header">
                     <h2 id="viewIdeaTitle">Título</h2>
-                    <!-- Botón de tres puntos con menú desplegable -->
                     <div class="actions">
                         <div class="dropdown">
                             <button class="btn-more" id="moreOptionsBtn">⋯</button>
@@ -149,7 +149,6 @@
                     </div>
 
                     <div class="actions-row">
-                        <!-- Eliminado el toggle de Markdown -->
                         <div class="next-btn-container" id="nextBtnContainer">
                             <button class="btn-next" id="nextBtn">➡️ Siguiente</button>
                         </div>
@@ -157,6 +156,11 @@
                         <div class="next-btn-container" id="retryContainer" style="display: none;">
                             <button class="btn-retry" id="retryBtn">🔄 Reintentar</button>
                         </div>
+                    </div>
+
+                    <!-- Botón principal "Nueva idea" (visible solo en ciertos estados) -->
+                    <div class="main-action-btn" id="newIdeaMainBtn" style="display: none;">
+                        <button class="btn-primary btn-large">➕ Nueva idea</button>
                     </div>
                 </div>
             </main>
