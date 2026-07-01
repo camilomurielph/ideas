@@ -9,46 +9,27 @@ let transcript = "";
 let finalTranscript = "";
 let isStoppedByUser = false;
 
-export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, toggleSwitch, toggleLabel) {
-    const PROMPT_MARKDOWN = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
+// Prompt fijo: Markdown
+const PROMPT = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
 
-    Reglas estrictas que debes seguir:
+Reglas estrictas que debes seguir:
 
-    1. Formato de salida: Devuelve ÚNICAMENTE un bloque de código en Markdown (\`\`\`markdown ... \`\`\`). No escribas absolutamente nada fuera de este bloque.
+1. Formato de salida: Devuelve ÚNICAMENTE un bloque de código en Markdown (\`\`\`markdown ... \`\`\`). No escribas absolutamente nada fuera de este bloque.
 
-    2. Título: Genera un título concreto y coherente que refleje fielmente el tema central de mi idea. Que sea descriptivo, no comercial.
+2. Título: Genera un título concreto y coherente que refleje fielmente el tema central de mi idea. Que sea descriptivo, no comercial.
 
-    3. Estructura libre y adaptable: NO uses plantillas rígidas como "Visión Ejecutiva", "Desglose Conceptual" o "Próximos pasos" a menos que encajen naturalmente. En su lugar, observa la naturaleza de lo que te cuento (puede ser una app, un proyecto, un video, una reflexión filosófica, un problema personal, etc.) y **elige la estructura que mejor le siente**. Usa los títulos de sección (##) que creas convenientes para darle coherencia, pero si la idea es sencilla, incluso puedes prescindir de ellos y usar solo párrafos y viñetas sueltas.
+3. Estructura libre y adaptable: NO uses plantillas rígidas como "Visión Ejecutiva", "Desglose Conceptual" o "Próximos pasos" a menos que encajen naturalmente. En su lugar, observa la naturaleza de lo que te cuento (puede ser una app, un proyecto, un video, una reflexión filosófica, un problema personal, etc.) y **elige la estructura que mejor le siente**. Usa los títulos de sección (##) que creas convenientes para darle coherencia, pero si la idea es sencilla, incluso puedes prescindir de ellos y usar solo párrafos y viñetas sueltas.
 
-    4. Adaptación al tamaño: Si mi transcripción es corta y simple, devuélveme un desarrollo breve y conciso, solo lo justo para que se entienda mejor que como lo dije. Si es compleja y larga, profundiza y divídela en más partes. La longitud final debe ser proporcional a la complejidad de lo que he dicho. No alargues ni recortes artificialmente.
+4. Adaptación al tamaño: Si mi transcripción es corta y simple, devuélveme un desarrollo breve y conciso, solo lo justo para que se entienda mejor que como lo dije. Si es compleja y larga, profundiza y divídela en más partes. La longitud final debe ser proporcional a la complejidad de lo que he dicho. No alargues ni recortes artificialmente.
 
-    5. Fidelidad absoluta: No inventes cosas que no he dicho, no cambies el enfoque ni le des un giro "cool" o "comercial" a mi idea. Tu trabajo es pulir y ordenar, no reescribir. Si hay vacíos lógicos, puedes rellenarlos solo si son evidentes y necesarios para la coherencia, pero siempre manteniendo mi intención original.
+5. Fidelidad absoluta: No inventes cosas que no he dicho, no cambies el enfoque ni le des un giro "cool" o "comercial" a mi idea. Tu trabajo es pulir y ordenar, no reescribir. Si hay vacíos lógicos, puedes rellenarlos solo si son evidentes y necesarios para la coherencia, pero siempre manteniendo mi intención original.
 
-    Al final de todo el desarrollo, y **solo al final**, añade una sección llamada "Otras perspectivas y mejoras". Aquí sí quiero que te tomes libertades constructivas. Sugiere 2 o 3 formas alternativas de abordar la idea, pequeños ajustes que no haya considerado, preguntas clave que debería hacerme, o herramientas/recursos que podrían ayudarme a profundizar. Esta sección debe ser breve y en tono de sugerencia, no de orden.
+Al final de todo el desarrollo, y **solo al final**, añade una sección llamada "Otras perspectivas y mejoras". Aquí sí quiero que te tomes libertades constructivas. Sugiere 2 o 3 formas alternativas de abordar la idea, pequeños ajustes que no haya considerado, preguntas clave que debería hacerme, o herramientas/recursos que podrían ayudarme a profundizar. Esta sección debe ser breve y en tono de sugerencia, no de orden.
 
-    Transcripción:`;
+Transcripción:`;
 
-    const PROMPT_UNIVERSAL = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
-
-    Reglas estrictas que debes seguir:
-
-    1. Formato de salida: Devuelve ÚNICAMENTE un bloque de código con el texto plano generado (sin markdown ni formatos por el estilo). No escribas absolutamente nada fuera de este bloque.
-
-    2. Título: Genera un título concreto y coherente que refleje fielmente el tema central de mi idea. Que sea descriptivo, no comercial.
-
-    3. Estructura libre y adaptable: NO uses plantillas rígidas como "Visión Ejecutiva", "Desglose Conceptual" o "Próximos pasos" a menos que encajen naturalmente. En su lugar, observa la naturaleza de lo que te cuento (puede ser una app, un proyecto, un video, una reflexión filosófica, un problema personal, etc.) y **elige la estructura que mejor le siente**. Usa los títulos de sección que creas convenientes para darle coherencia, pero si la idea es sencilla, incluso puedes prescindir de ellos y usar solo párrafos y viñetas sueltas.
-
-    4. Adaptación al tamaño: Si mi transcripción es corta y simple, devuélveme un desarrollo breve y conciso, solo lo justo para que se entienda mejor que como lo dije. Si es compleja y larga, profundiza y divídela en más partes. La longitud final debe ser proporcional a la complejidad de lo que he dicho. No alargues ni recortes artificialmente.
-
-    5. Fidelidad absoluta: No inventes cosas que no he dicho, no cambies el enfoque ni le des un giro "cool" o "comercial" a mi idea. Tu trabajo es pulir y ordenar, no reescribir. Si hay vacíos lógicos, puedes rellenarlos solo si son evidentes y necesarios para la coherencia, pero siempre manteniendo mi intención original.
-
-    Al final de todo el desarrollo, y **solo al final**, añade una sección llamada "Otras perspectivas y mejoras". Aquí sí quiero que te tomes libertades constructivas. Sugiere 2 o 3 formas alternativas de abordar la idea, pequeños ajustes que no haya considerado, preguntas clave que debería hacerme, o herramientas/recursos que podrían ayudarme a profundizar. Esta sección debe ser breve y en tono de sugerencia, no de orden.
-
-    Transcripción:`;
-
-    function getCurrentPrompt() {
-        return toggleSwitch.classList.contains('active') ? PROMPT_MARKDOWN : PROMPT_UNIVERSAL;
-    }
+export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn) {
+    // Ya no recibimos toggleSwitch ni toggleLabel
 
     function startRecognition() {
         try {
@@ -201,7 +182,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
             transcriptContent.textContent = finalText;
             nextBtnContainer.classList.add('visible');
             transcript = finalText;
-            showToast('✅ Grabación finalizada', 'success', 2000);
+            showToast('✅ Transcripción lista', 'success', 2000);
         } else {
             showToast('No se captó ninguna palabra', 'error', 3000);
             resetUI();
@@ -240,7 +221,7 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
             return;
         }
 
-        const fullText = getCurrentPrompt() + '\n\n' + text;
+        const fullText = PROMPT + '\n\n' + text;
         copyToClipboard(fullText)
             .then(() => {
                 showToast('✅ Prompt copiado al portapapeles', 'success', 3000);
@@ -258,21 +239,8 @@ export function initMic(micBtn, micStatus, helpText, transcriptArea, transcriptC
         startRecognition();
     }
 
-    function toggleMode() {
-        if (toggleSwitch.classList.contains('active')) {
-            toggleSwitch.classList.remove('active');
-            toggleLabel.classList.remove('active');
-            showToast('Modo Universal activado (texto plano)', 'info', 2000);
-        } else {
-            toggleSwitch.classList.add('active');
-            toggleLabel.classList.add('active');
-            showToast('Modo Markdown activado', 'info', 2000);
-        }
-    }
-
     // Asignar eventos
     micBtn.addEventListener('click', toggleRecording);
     nextBtn.addEventListener('click', handleNext);
     retryBtn.addEventListener('click', handleRetry);
-    toggleSwitch.addEventListener('click', toggleMode);
 }
