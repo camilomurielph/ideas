@@ -6,6 +6,7 @@ import { initAuth } from './auth.js';
 import { loadIdeas, renderIdeaList, createIdea, updateIdea, deleteIdea, getIdeas, getCurrentIdeaId, setCurrentIdeaId } from './ideas.js';
 import { initMic } from './mic.js';
 import { showToast, copyToClipboard, getPlainText, pasteFromClipboard } from './ui.js';
+import { saveAiPreference, getAIUrl } from './profile.js';
 
 // ================================================================
 //  DOM REFS
@@ -24,7 +25,6 @@ const loginToggleLink = $('loginToggleLink');
 const loginModeText = $('loginModeText');
 const loginTitle = $('loginTitle');
 const logoutBtn = $('logoutBtn');
-const userEmailDisplay = $('userEmailDisplay');
 
 const sidebar = $('sidebar');
 const sidebarOverlay = $('sidebarOverlay');
@@ -67,18 +67,25 @@ const retryBtn = $('retryBtn');
 const newIdeaMainBtn = $('newIdeaMainBtn');
 const pasteFromClipboardBtn = $('pasteFromClipboardBtn');
 
+const configBtn = $('configBtn');
+const configModal = $('configModal');
+const closeConfigModal = $('closeConfigModal');
+const aiSelect = $('aiSelect');
+const saveConfigBtn = $('saveConfigBtn');
+
 const mainTitle = $('mainTitle');
 
 // ================================================================
 //  ESTADO
 // ================================================================
 let currentUser = null;
+let currentAI = 'Gemini';
 let currentIdea = null;
 let waitingForGemini = false;
 let lastTranscript = '';
 
 // ================================================================
-//  FUNCIONES DE UI (sidebar, modales)
+//  FUNCIONES DE UI
 // ================================================================
 function toggleSidebar(open) {
     if (open === undefined) {
@@ -107,25 +114,24 @@ document.addEventListener('click', (e) => {
 });
 
 // ================================================================
-//  GUÍA CONTEXTUAL - ESTADOS
+//  GUÍA CONTEXTUAL
 // ================================================================
 function resetGuia() {
     waitingForGemini = false;
     newIdeaMainBtn.style.display = 'none';
-    helpText.innerHTML = '';
-    // Restaurar placeholder del modal si está abierto
+    helpText.innerHTML = '💡 Explícame tu idea con lujo de detalles';
     newIdeaContent.placeholder = 'Pega aquí el contenido desarrollado por Gemini...';
     if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'none';
 }
 
 function showWaitingForGemini() {
     waitingForGemini = true;
-    helpText.innerHTML = '📋 ¿Ya tienes el resultado de Gemini? Crea una nueva idea y pégalo.';
+    helpText.innerHTML = `📋 ¿Ya tienes el resultado de ${currentAI}? Crea una nueva idea y pégalo.`;
     newIdeaMainBtn.style.display = 'block';
 }
 
 // ================================================================
-//  EVENTO DE FOCO PARA DETECTAR REGRESO DE GEMINI
+//  EVENTO DE FOCO PARA DETECTAR REGRESO
 // ================================================================
 window.addEventListener('focus', () => {
     if (waitingForGemini) {
@@ -134,7 +140,7 @@ window.addEventListener('focus', () => {
 });
 
 // ================================================================
-//  MANEJO DEL MENÚ DESPLEGABLE EN EL MODAL
+//  MANEJO DEL MENÚ DESPLEGABLE
 // ================================================================
 function toggleDropdown(e) {
     e.stopPropagation();
@@ -172,7 +178,6 @@ let isEditing = false;
 function openViewIdea(idea) {
     currentIdea = idea;
     setCurrentIdeaId(idea.id);
-    // Mostrar título en h2, ocultar input
     viewIdeaTitle.textContent = idea.title || 'Sin título';
     viewIdeaTitle.style.display = 'block';
     viewIdeaTitleInput.style.display = 'none';
@@ -212,7 +217,6 @@ function openViewIdea(idea) {
 
 function enterEditMode(idea) {
     isEditing = true;
-    // Mostrar input de título, ocultar h2
     viewIdeaTitle.style.display = 'none';
     viewIdeaTitleInput.style.display = 'block';
     viewIdeaTitleInput.value = idea.title || 'Sin título';
@@ -304,7 +308,7 @@ function copyPlainText(idea) {
 }
 
 // ================================================================
-//  NUEVA IDEA - Botón del menú lateral
+//  NUEVA IDEA
 // ================================================================
 newIdeaBtn.addEventListener('click', () => {
     if (!currentUser) {
@@ -314,14 +318,11 @@ newIdeaBtn.addEventListener('click', () => {
     newIdeaModal.classList.add('open');
     newIdeaTitle.value = getNextDefaultTitle();
     newIdeaContent.value = '';
-    newIdeaContent.placeholder = 'Pega aquí el contenido desarrollado por Gemini...';
+    newIdeaContent.placeholder = `Pega aquí el contenido desarrollado por ${currentAI}...`;
     if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'none';
     setTimeout(() => newIdeaTitle.focus(), 100);
 });
 
-// ================================================================
-//  NUEVA IDEA - Botón principal (guía contextual)
-// ================================================================
 newIdeaMainBtn.addEventListener('click', () => {
     if (!currentUser) {
         showToast('Inicia sesión para guardar ideas', 'warning');
@@ -330,21 +331,15 @@ newIdeaMainBtn.addEventListener('click', () => {
     newIdeaModal.classList.add('open');
     newIdeaTitle.value = getNextDefaultTitle();
     newIdeaContent.value = '';
-    newIdeaContent.placeholder = 'Pega aquí el resultado que generó Gemini...';
+    newIdeaContent.placeholder = `Pega aquí el resultado que generó ${currentAI}...`;
     if (pasteFromClipboardBtn) pasteFromClipboardBtn.style.display = 'inline-block';
     setTimeout(() => newIdeaTitle.focus(), 100);
 });
 
-// ================================================================
-//  BOTÓN PEGAR DESDE PORTAPAPELES
-// ================================================================
 pasteFromClipboardBtn?.addEventListener('click', async () => {
     await pasteFromClipboard(newIdeaContent);
 });
 
-// ================================================================
-//  GUARDAR IDEA (también resetea la guía)
-// ================================================================
 saveIdeaBtn.addEventListener('click', async () => {
     if (!currentUser) {
         showToast('Inicia sesión para guardar', 'warning');
@@ -367,9 +362,6 @@ saveIdeaBtn.addEventListener('click', async () => {
     }
 });
 
-// ================================================================
-//  CERRAR MODAL NUEVA IDEA
-// ================================================================
 closeNewIdeaModal.addEventListener('click', () => newIdeaModal.classList.remove('open'));
 cancelNewIdeaBtn.addEventListener('click', () => newIdeaModal.classList.remove('open'));
 newIdeaModal.addEventListener('click', (e) => {
@@ -393,12 +385,56 @@ viewIdeaModal.addEventListener('click', (e) => {
 });
 
 // ================================================================
+//  CONFIGURACIÓN DE CUENTA
+// ================================================================
+configBtn.addEventListener('click', () => {
+    if (!currentUser) {
+        showToast('Inicia sesión para configurar', 'warning');
+        return;
+    }
+    aiSelect.value = currentAI;
+    configModal.classList.add('open');
+});
+
+closeConfigModal.addEventListener('click', () => configModal.classList.remove('open'));
+configModal.addEventListener('click', (e) => {
+    if (e.target === configModal) configModal.classList.remove('open');
+});
+
+saveConfigBtn.addEventListener('click', async () => {
+    if (!currentUser) {
+        showToast('Inicia sesión para guardar', 'warning');
+        return;
+    }
+    const selectedAI = aiSelect.value;
+    const success = await saveAiPreference(currentUser.id, selectedAI);
+    if (success) {
+        currentAI = selectedAI;
+        showToast(`✅ Preferencia guardada: ${selectedAI}`, 'success');
+        configModal.classList.remove('open');
+        // Actualizar mensajes que mencionan la IA
+        if (helpText.innerHTML.includes('Gemini') || helpText.innerHTML.includes('Deepseek') || helpText.innerHTML.includes('Claude') || helpText.innerHTML.includes('ChatGPT')) {
+            // Si hay un mensaje visible que menciona la IA, actualizarlo
+            if (waitingForGemini) {
+                showWaitingForGemini();
+            } else if (helpText.innerHTML.includes('Transcripción lista')) {
+                // No actualizamos automáticamente para no interferir
+            }
+        }
+        // Actualizar placeholders del modal de nueva idea si está abierto
+        if (newIdeaModal.classList.contains('open')) {
+            newIdeaContent.placeholder = `Pega aquí el contenido desarrollado por ${currentAI}...`;
+        }
+    }
+});
+
+// ================================================================
 //  AUTENTICACIÓN (callback)
 // ================================================================
-function onAuthChange(user) {
+function onAuthChange(user, aiPreference) {
     if (user) {
         currentUser = user;
-        userEmailDisplay.textContent = user.email;
+        currentAI = aiPreference || 'Gemini';
         authSection.innerHTML = `
             <div class="user-badge">
                 <span class="email">${user.email}</span>
@@ -411,6 +447,7 @@ function onAuthChange(user) {
         });
     } else {
         currentUser = null;
+        currentAI = 'Gemini';
         authSection.innerHTML = `<button class="btn-login" id="loginBtn">Iniciar sesión</button>`;
         document.getElementById('loginBtn').addEventListener('click', () => {
             loginModal.classList.add('open');
@@ -428,22 +465,25 @@ function onAuthChange(user) {
     }
 }
 
-// Inicializar autenticación
 initAuth(loginModal, closeLoginModal, loginEmail, loginPassword, loginActionBtn, loginToggleBtn, loginToggleLink, loginModeText, loginTitle, loginBtn, logoutBtn, onAuthChange);
 
 // ================================================================
-//  INICIALIZAR MICRÓFONO CON CALLBACK
+//  INICIALIZAR MICRÓFONO CON CALLBACK Y GET AI
 // ================================================================
 function onNextCallback(transcription) {
     lastTranscript = transcription;
     showWaitingForGemini();
 }
 
-initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback);
+function getCurrentAI() {
+    return currentAI;
+}
+
+initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnContainer, retryContainer, nextBtn, retryBtn, onNextCallback, getCurrentAI);
 
 // ================================================================
 //  INICIO
 // ================================================================
 resetGuia();
 showToast('Bienvenido a ideas', 'info', 3000);
-console.log('🎙️ ideas app v11.0 - con guía contextual y mejoras UI');
+console.log('🎙️ ideas app v12.0 - con configuración de IA y textos dinámicos');
