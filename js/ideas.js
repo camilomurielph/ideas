@@ -2,7 +2,7 @@ import { supabase } from './supabase.js';
 import { showToast, formatDate } from './ui.js';
 
 // ================================================================
-//  GESTIÓN DE IDEAS (CRUD)
+//  GESTIÓN DE IDEAS (CRUD) CON LOGS
 // ================================================================
 let ideas = [];
 let currentIdeaId = null;
@@ -57,12 +57,17 @@ export function renderIdeaList(ideaListElement, onItemClick) {
 }
 
 export async function createIdea(title, content, userId) {
+    console.log('🔹 createIdea llamado con:', { title, content, userId });
     if (!userId) throw new Error('Usuario no autenticado');
     const { data, error } = await supabase
         .from('ideas')
         .insert([{ user_id: userId, title, content }])
         .select();
-    if (error) throw error;
+    if (error) {
+        console.error('❌ Error en createIdea:', error);
+        throw error;
+    }
+    console.log('✅ createIdea éxito:', data);
     if (data && data.length > 0) {
         ideas.unshift(data[0]);
         currentIdeaId = data[0].id;
@@ -72,11 +77,15 @@ export async function createIdea(title, content, userId) {
 }
 
 export async function updateIdea(id, title, content) {
+    console.log('🔹 updateIdea llamado con:', { id, title, content });
     const { error } = await supabase
         .from('ideas')
         .update({ title, content, updated_at: new Date().toISOString() })
         .eq('id', id);
-    if (error) throw error;
+    if (error) {
+        console.error('❌ Error en updateIdea:', error);
+        throw error;
+    }
     const idea = ideas.find(i => i.id === id);
     if (idea) {
         idea.title = title;
