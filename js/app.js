@@ -130,9 +130,6 @@ function showWaitingForGemini() {
     newIdeaMainBtn.style.display = 'block';
 }
 
-// ================================================================
-//  EVENTO DE FOCO PARA DETECTAR REGRESO
-// ================================================================
 window.addEventListener('focus', () => {
     if (waitingForGemini) {
         showWaitingForGemini();
@@ -479,4 +476,4 @@ initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnC
 // ================================================================
 resetGuia();
 showToast('Bienvenido a ideas', 'info', 3000);
-console.log('🎙️ ideas app v13.0 - estable');
+console.log('🎙️ ideas app v14.0 - completamente funcional');
