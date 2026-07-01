@@ -3,15 +3,12 @@ import { showToast } from './ui.js';
 import { getProfile, createDefaultProfile } from './profile.js';
 
 // ================================================================
-//  AUTENTICACIÓN CON PERSISTENCIA
+//  AUTENTICACIÓN CON PERSISTENCIA Y VERIFICACIÓN DE SESIÓN
 // ================================================================
 let isLoginMode = true;
 let authInitialized = false;
 
 export function initAuth(loginModal, closeLoginModal, loginEmail, loginPassword, loginActionBtn, loginToggleBtn, loginToggleLink, loginModeText, loginTitle, loginBtn, logoutBtn, onAuthChange) {
-    
-    // Ya no se reinicia el estado de auth al recargar porque supabase maneja la sesión
-    // Solo configuramos los listeners una vez
 
     function toggleLoginMode() {
         isLoginMode = !isLoginMode;
@@ -73,24 +70,38 @@ export function initAuth(loginModal, closeLoginModal, loginEmail, loginPassword,
         }
     });
 
-    // Escuchar cambios de autenticación solo una vez
+    // Función para procesar usuario y perfil
+    async function handleUser(session) {
+        if (session) {
+            const user = session.user;
+            let profile = await getProfile(user.id);
+            if (!profile) {
+                profile = await createDefaultProfile(user.id);
+            }
+            if (profile) {
+                onAuthChange(user, profile.ai_preference);
+            } else {
+                onAuthChange(user, 'Gemini');
+            }
+        } else {
+            onAuthChange(null, 'Gemini');
+        }
+    }
+
+    // Configurar listener solo una vez
     if (!authInitialized) {
         authInitialized = true;
+        // Escuchar cambios de autenticación
         supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
-                const user = session.user;
-                let profile = await getProfile(user.id);
-                if (!profile) {
-                    profile = await createDefaultProfile(user.id);
-                }
-                if (profile) {
-                    onAuthChange(user, profile.ai_preference);
-                } else {
-                    onAuthChange(user, 'Gemini');
-                }
-            } else {
-                onAuthChange(null, 'Gemini');
-            }
+            await handleUser(session);
+        });
+
+        // Verificar sesión actual al cargar la página
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            await handleUser(session);
+        }).catch(err => {
+            console.error('Error obteniendo sesión:', err);
+            onAuthChange(null, 'Gemini');
         });
     }
 }
