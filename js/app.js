@@ -2,20 +2,21 @@
 //  PUNTO DE ENTRADA DE LA APLICACIÓN
 // ================================================================
 import { supabase } from './supabase.js';
-import { initAuth } from './auth.js';
+import { initAuth, setupLoginUI } from './auth.js';
 import { loadIdeas, renderIdeaList, createIdea, updateIdea, deleteIdea, getIdeas, getCurrentIdeaId, setCurrentIdeaId } from './ideas.js';
 import { initMic } from './mic.js';
 import { showToast, copyToClipboard, getPlainText, pasteFromClipboard } from './ui.js';
 import { saveAiPreference } from './profile.js';
 
 // ================================================================
-//  DOM REFS
+//  DOM REFS (asegurar que todos los elementos existen)
 // ================================================================
 const $ = id => document.getElementById(id);
 
 const loginBtn = $('loginBtn');
 const userBadge = $('userBadge');
 const userEmailDisplay = $('userEmailDisplay');
+const logoutBtn = $('logoutBtn');
 
 const loginModal = $('loginModal');
 const closeLoginModal = $('closeLoginModal');
@@ -26,7 +27,6 @@ const loginToggleBtn = $('loginToggleBtn');
 const loginToggleLink = $('loginToggleLink');
 const loginModeText = $('loginModeText');
 const loginTitle = $('loginTitle');
-const logoutBtn = $('logoutBtn');
 
 const sidebar = $('sidebar');
 const sidebarOverlay = $('sidebarOverlay');
@@ -421,9 +421,10 @@ saveConfigBtn.addEventListener('click', async () => {
 });
 
 // ================================================================
-//  AUTENTICACIÓN (callback)
+//  AUTENTICACIÓN: CALLBACK PARA ACTUALIZAR UI
 // ================================================================
 function onAuthChange(user, aiPreference) {
+    console.log('🔹 onAuthChange llamado, user:', user?.email);
     if (user) {
         currentUser = user;
         currentAI = aiPreference || 'Gemini';
@@ -455,8 +456,19 @@ function onAuthChange(user, aiPreference) {
     }
 }
 
-// Inicializar autenticación con los elementos fijos
-initAuth(loginModal, closeLoginModal, loginEmail, loginPassword, loginActionBtn, loginToggleBtn, loginToggleLink, loginModeText, loginTitle, loginBtn, logoutBtn, onAuthChange);
+// ================================================================
+//  INICIALIZAR AUTENTICACIÓN Y UI DE LOGIN
+// ================================================================
+// Primero, configurar la UI de login (eventos de botones)
+setupLoginUI(
+    loginBtn, userBadge, userEmailDisplay, logoutBtn,
+    loginModal, closeLoginModal, loginEmail, loginPassword,
+    loginActionBtn, loginToggleBtn, loginToggleLink,
+    loginModeText, loginTitle
+);
+
+// Segundo, inicializar la autenticación con el callback
+initAuth(onAuthChange);
 
 // ================================================================
 //  INICIALIZAR MICRÓFONO CON CALLBACK Y GET AI
@@ -477,4 +489,4 @@ initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnC
 // ================================================================
 resetGuia();
 showToast('Bienvenido a ideas', 'info', 3000);
-console.log('🎙️ ideas app v16.0 - sesión persistente');
+console.log('🎙️ ideas app v17.0 - persistencia de sesión definitiva');
