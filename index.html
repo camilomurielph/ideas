@@ -43,12 +43,29 @@
                 flex: 1;
                 height: 100vh;
                 overflow: hidden;
+                position: relative;
+            }
+
+            /* ===== OVERLAY PARA CERRAR SIDEBAR EN MÓVIL ===== */
+            .sidebar-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 99;
+                display: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            .sidebar-overlay.open {
+                display: block;
+                opacity: 1;
             }
 
             /* ===== PANEL LATERAL ===== */
             .sidebar {
                 width: 280px;
-                background: rgba(255, 255, 255, 0.02);
+                background: rgba(20, 20, 20, 0.95);
+                backdrop-filter: blur(12px);
                 border-right: 1px solid rgba(255, 255, 255, 0.04);
                 padding: 1.5rem 0.8rem;
                 display: none;
@@ -56,6 +73,8 @@
                 height: 100vh;
                 overflow-y: auto;
                 flex-shrink: 0;
+                position: relative;
+                z-index: 100;
                 transition: transform 0.3s ease;
             }
             .sidebar.open {
@@ -171,7 +190,7 @@
                 color: #ff6b6b;
             }
 
-            /* ===== ÁREA PRINCIPAL ===== */
+            /* ===== ÁREA PRINCIPAL (siempre visible) ===== */
             .main {
                 flex: 1;
                 display: flex;
@@ -180,6 +199,7 @@
                 overflow-y: auto;
                 background: #0d0d0d;
                 position: relative;
+                min-width: 0;
             }
 
             /* ===== CABECERA ===== */
@@ -208,10 +228,10 @@
                 color: rgba(255, 255, 255, 0.5);
                 font-size: 1.8rem;
                 cursor: pointer;
-                display: none;
                 padding: 0.2rem 0.5rem;
                 border-radius: 8px;
                 transition: background 0.2s ease;
+                display: none;
             }
             .btn-hamburger:hover {
                 background: rgba(255, 255, 255, 0.04);
@@ -245,8 +265,8 @@
                 white-space: nowrap;
             }
 
-            /* ===== VISTA DE PRUEBA (micrófono) ===== */
-            .guest-view {
+            /* ===== VISTA PRINCIPAL: MICRÓFONO ===== */
+            .mic-view {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -254,13 +274,13 @@
                 flex: 1;
                 gap: 1.5rem;
             }
-            .guest-view .mic-container {
+            .mic-view .mic-container {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 gap: 1.5rem;
             }
-            .guest-view .mic-btn {
+            .mic-view .mic-btn {
                 width: 140px;
                 height: 140px;
                 border-radius: 50%;
@@ -276,25 +296,25 @@
                 justify-content: center;
                 position: relative;
             }
-            .guest-view .mic-btn:hover:not(:disabled) {
+            .mic-view .mic-btn:hover:not(:disabled) {
                 transform: scale(1.05);
                 box-shadow: 0 12px 40px rgba(26, 92, 255, 0.5);
             }
-            .guest-view .mic-btn:active:not(:disabled) {
+            .mic-view .mic-btn:active:not(:disabled) {
                 transform: scale(0.95);
             }
-            .guest-view .mic-btn.recording {
+            .mic-view .mic-btn.recording {
                 background: linear-gradient(135deg, #ff4a4a, #d32f2f);
                 box-shadow: 0 8px 32px rgba(255, 60, 60, 0.4);
                 animation: pulse 1.5s infinite;
             }
-            .guest-view .mic-btn:disabled {
+            .mic-view .mic-btn:disabled {
                 opacity: 0.4;
                 cursor: not-allowed;
                 transform: none !important;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             }
-            .guest-view .mic-btn.error-state {
+            .mic-view .mic-btn.error-state {
                 background: linear-gradient(135deg, #ef4444, #dc2626);
                 box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
             }
@@ -303,19 +323,19 @@
                 50% { transform: scale(1.06); }
                 100% { transform: scale(1); }
             }
-            .guest-view .mic-status {
+            .mic-view .mic-status {
                 font-size: 1rem;
                 color: rgba(255, 255, 255, 0.5);
                 min-height: 2rem;
                 font-weight: 400;
                 letter-spacing: 0.3px;
             }
-            .guest-view .mic-status.recording { color: #ff6b6b; }
-            .guest-view .mic-status.done { color: #4adc78; }
-            .guest-view .mic-status.error { color: #ff6b6b; }
-            .guest-view .mic-status.small { font-size: 0.85rem; opacity: 0.7; }
+            .mic-view .mic-status.recording { color: #ff6b6b; }
+            .mic-view .mic-status.done { color: #4adc78; }
+            .mic-view .mic-status.error { color: #ff6b6b; }
+            .mic-view .mic-status.small { font-size: 0.85rem; opacity: 0.7; }
 
-            .guest-view .transcript-area {
+            .mic-view .transcript-area {
                 width: 100%;
                 max-width: 500px;
                 padding: 1rem;
@@ -325,15 +345,15 @@
                 display: none;
                 text-align: left;
             }
-            .guest-view .transcript-area.visible { display: block; }
-            .guest-view .transcript-area .label {
+            .mic-view .transcript-area.visible { display: block; }
+            .mic-view .transcript-area .label {
                 font-size: 0.75rem;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 color: rgba(255, 255, 255, 0.2);
                 margin-bottom: 0.3rem;
             }
-            .guest-view .transcript-area .content {
+            .mic-view .transcript-area .content {
                 font-size: 0.95rem;
                 line-height: 1.6;
                 color: #e0e0e0;
@@ -343,7 +363,7 @@
                 word-wrap: break-word;
             }
 
-            .guest-view .actions-row {
+            .mic-view .actions-row {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
@@ -351,7 +371,7 @@
                 gap: 0.8rem;
                 margin-top: 1rem;
             }
-            .guest-view .toggle-container {
+            .mic-view .toggle-container {
                 display: flex;
                 align-items: center;
                 gap: 0.8rem;
@@ -360,7 +380,7 @@
                 border-radius: 60px;
                 border: 1px solid rgba(255, 255, 255, 0.06);
             }
-            .guest-view .toggle-label {
+            .mic-view .toggle-label {
                 font-size: 0.7rem;
                 font-weight: 500;
                 color: rgba(255, 255, 255, 0.4);
@@ -368,8 +388,8 @@
                 user-select: none;
                 transition: color 0.3s ease;
             }
-            .guest-view .toggle-label.active { color: rgba(255, 255, 255, 0.8); }
-            .guest-view .toggle-switch {
+            .mic-view .toggle-label.active { color: rgba(255, 255, 255, 0.8); }
+            .mic-view .toggle-switch {
                 position: relative;
                 width: 44px;
                 height: 26px;
@@ -379,8 +399,8 @@
                 transition: background 0.3s ease;
                 flex-shrink: 0;
             }
-            .guest-view .toggle-switch.active { background: #34c759; }
-            .guest-view .toggle-switch .slider {
+            .mic-view .toggle-switch.active { background: #34c759; }
+            .mic-view .toggle-switch .slider {
                 position: absolute;
                 top: 2px;
                 left: 2px;
@@ -391,10 +411,10 @@
                 transition: transform 0.3s ease, box-shadow 0.3s ease;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             }
-            .guest-view .toggle-switch.active .slider { transform: translateX(18px); }
+            .mic-view .toggle-switch.active .slider { transform: translateX(18px); }
 
-            .guest-view .btn-next,
-            .guest-view .btn-retry {
+            .mic-view .btn-next,
+            .mic-view .btn-retry {
                 display: inline-flex;
                 align-items: center;
                 gap: 0.5rem;
@@ -407,233 +427,26 @@
                 cursor: pointer;
                 transition: all 0.25s ease;
             }
-            .guest-view .btn-next {
+            .mic-view .btn-next {
                 background: linear-gradient(135deg, #10b981, #059669);
                 color: white;
                 box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
                 padding: 0.8rem 2.5rem;
                 font-size: 1rem;
             }
-            .guest-view .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(16, 185, 129, 0.5); }
-            .guest-view .btn-retry {
+            .mic-view .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(16, 185, 129, 0.5); }
+            .mic-view .btn-retry {
                 background: linear-gradient(135deg, #f59e0b, #d97706);
                 color: white;
                 box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
                 padding: 0.8rem 2.5rem;
                 font-size: 1rem;
             }
-            .guest-view .btn-retry:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(245, 158, 11, 0.5); }
-            .guest-view .next-btn-container { display: none; justify-content: center; }
-            .guest-view .next-btn-container.visible { display: flex; }
+            .mic-view .btn-retry:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(245, 158, 11, 0.5); }
+            .mic-view .next-btn-container { display: none; justify-content: center; }
+            .mic-view .next-btn-container.visible { display: flex; }
 
-            /* ===== VISTA DE USUARIO (editor de ideas) ===== */
-            .user-view {
-                display: none;
-                flex: 1;
-                flex-direction: column;
-                height: 100%;
-            }
-            .user-view.visible { display: flex; }
-
-            .user-view .idea-editor {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                background: rgba(255, 255, 255, 0.02);
-                border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.04);
-                overflow: hidden;
-                min-height: 300px;
-            }
-            .user-view .editor-toolbar {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0.5rem 1rem;
-                background: rgba(255, 255, 255, 0.02);
-                border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-                flex-wrap: wrap;
-                gap: 0.5rem;
-            }
-            .user-view .editor-toolbar .left {
-                display: flex;
-                align-items: center;
-                gap: 0.8rem;
-            }
-            .user-view .editor-toolbar .right {
-                display: flex;
-                align-items: center;
-                gap: 0.8rem;
-            }
-            .user-view .editor-toolbar .title-input {
-                background: transparent;
-                border: none;
-                color: #f0f6fc;
-                font-size: 1.1rem;
-                font-weight: 600;
-                font-family: "Montserrat", sans-serif;
-                padding: 0.2rem 0.5rem;
-                border-radius: 6px;
-                min-width: 150px;
-                flex: 1;
-            }
-            .user-view .editor-toolbar .title-input:focus {
-                outline: 2px solid rgba(74, 140, 255, 0.3);
-            }
-            .user-view .editor-toolbar button {
-                background: none;
-                border: none;
-                color: rgba(255, 255, 255, 0.4);
-                cursor: pointer;
-                font-size: 0.85rem;
-                padding: 0.3rem 0.8rem;
-                border-radius: 40px;
-                transition: all 0.2s ease;
-                font-family: "Montserrat", sans-serif;
-                font-weight: 500;
-                border: 1px solid transparent;
-            }
-            .user-view .editor-toolbar button:hover {
-                color: #f0f6fc;
-                background: rgba(255, 255, 255, 0.04);
-            }
-            .user-view .editor-toolbar button.active-mode {
-                background: rgba(74, 140, 255, 0.12);
-                border-color: rgba(74, 140, 255, 0.2);
-                color: #4a8cff;
-            }
-            .user-view .editor-toolbar .btn-copy {
-                color: rgba(255, 255, 255, 0.4);
-            }
-            .user-view .editor-toolbar .btn-copy:hover {
-                color: #4adc78;
-            }
-
-            .user-view .editor-body {
-                flex: 1;
-                padding: 1.2rem;
-                overflow-y: auto;
-                position: relative;
-            }
-            .user-view .editor-body textarea {
-                width: 100%;
-                height: 100%;
-                min-height: 200px;
-                background: transparent;
-                border: none;
-                color: #e0e0e0;
-                font-family: "Montserrat", monospace;
-                font-size: 0.95rem;
-                line-height: 1.7;
-                resize: none;
-                outline: none;
-                padding: 0;
-            }
-            .user-view .editor-body .preview {
-                font-size: 0.95rem;
-                line-height: 1.7;
-                color: #e0e0e0;
-                padding: 0.2rem 0;
-            }
-            .user-view .editor-body .preview h1,
-            .user-view .editor-body .preview h2,
-            .user-view .editor-body .preview h3 {
-                font-family: "Georgia", serif;
-                font-weight: 700;
-                margin-top: 1.2rem;
-                margin-bottom: 0.5rem;
-                color: #f0f6fc;
-            }
-            .user-view .editor-body .preview p {
-                margin: 0.6rem 0;
-            }
-            .user-view .editor-body .preview ul,
-            .user-view .editor-body .preview ol {
-                margin: 0.6rem 0;
-                padding-left: 1.5rem;
-            }
-            .user-view .editor-body .preview code {
-                background: rgba(255, 255, 255, 0.06);
-                padding: 0.1rem 0.4rem;
-                border-radius: 4px;
-                font-size: 0.9em;
-                color: #f0b0b0;
-            }
-            .user-view .editor-body .preview pre {
-                background: rgba(0, 0, 0, 0.3);
-                padding: 1rem;
-                border-radius: 8px;
-                overflow-x: auto;
-            }
-            .user-view .editor-body .preview blockquote {
-                border-left: 4px solid #4a8cff;
-                padding-left: 1rem;
-                margin: 0.8rem 0;
-                color: rgba(255, 255, 255, 0.7);
-                font-style: italic;
-            }
-            .user-view .editor-body .preview img {
-                max-width: 100%;
-                border-radius: 8px;
-                margin: 0.5rem 0;
-            }
-            .user-view .editor-body .preview table {
-                border-collapse: collapse;
-                width: 100%;
-                margin: 0.8rem 0;
-            }
-            .user-view .editor-body .preview th,
-            .user-view .editor-body .preview td {
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                padding: 0.4rem 0.8rem;
-                text-align: left;
-            }
-            .user-view .editor-body .preview th {
-                background: rgba(255, 255, 255, 0.04);
-            }
-
-            .user-view .empty-state {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                flex: 1;
-                color: rgba(255, 255, 255, 0.2);
-                font-size: 1.1rem;
-                gap: 0.5rem;
-            }
-            .user-view .empty-state .icon {
-                font-size: 3rem;
-                opacity: 0.3;
-            }
-
-            /* ===== TOAST ===== */
-            .toast {
-                position: fixed;
-                bottom: 2rem;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(0, 0, 0, 0.85);
-                backdrop-filter: blur(12px);
-                color: #f0f6fc;
-                padding: 0.7rem 2rem;
-                border-radius: 60px;
-                font-weight: 500;
-                font-size: 0.9rem;
-                border: 1px solid rgba(255, 255, 255, 0.04);
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-                opacity: 0;
-                transition: opacity 0.3s ease;
-                pointer-events: none;
-                z-index: 999;
-                max-width: 90%;
-            }
-            .toast.visible { opacity: 1; }
-            .toast.error { background: rgba(180, 30, 30, 0.85); }
-            .toast.success { background: rgba(20, 120, 70, 0.85); }
-            .toast.warning { background: rgba(180, 130, 30, 0.85); }
-
-            /* ===== MODAL LOGIN ===== */
+            /* ===== MODALES ===== */
             .modal-overlay {
                 position: fixed;
                 inset: 0;
@@ -672,7 +485,8 @@
                 margin-bottom: 0.3rem;
                 font-weight: 500;
             }
-            .modal .field input {
+            .modal .field input,
+            .modal .field textarea {
                 width: 100%;
                 padding: 0.7rem 1rem;
                 background: rgba(255, 255, 255, 0.04);
@@ -683,7 +497,13 @@
                 font-family: "Montserrat", sans-serif;
                 transition: border-color 0.3s ease;
             }
-            .modal .field input:focus {
+            .modal .field textarea {
+                min-height: 120px;
+                resize: vertical;
+                font-size: 0.95rem;
+            }
+            .modal .field input:focus,
+            .modal .field textarea:focus {
                 outline: none;
                 border-color: #4a8cff;
             }
@@ -720,17 +540,6 @@
                 background: rgba(255, 255, 255, 0.04);
                 color: #f0f6fc;
             }
-            .modal .toggle-mode {
-                text-align: center;
-                margin-top: 1rem;
-                font-size: 0.85rem;
-                color: rgba(255, 255, 255, 0.3);
-            }
-            .modal .toggle-mode a {
-                color: #4a8cff;
-                cursor: pointer;
-                text-decoration: underline dotted;
-            }
             .modal .close-modal {
                 position: absolute;
                 top: 0.8rem;
@@ -743,25 +552,43 @@
                 transition: color 0.3s ease;
             }
             .modal .close-modal:hover { color: rgba(255, 255, 255, 0.6); }
+            .modal .toggle-mode {
+                text-align: center;
+                margin-top: 1rem;
+                font-size: 0.85rem;
+                color: rgba(255, 255, 255, 0.3);
+            }
+            .modal .toggle-mode a {
+                color: #4a8cff;
+                cursor: pointer;
+                text-decoration: underline dotted;
+            }
 
-            /* ===== MODAL NUEVA IDEA ===== */
-            .modal-new-idea .field textarea {
-                width: 100%;
-                min-height: 120px;
-                background: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 12px;
-                color: #e0e0e0;
-                font-size: 0.95rem;
-                font-family: "Montserrat", sans-serif;
-                padding: 0.7rem 1rem;
-                resize: vertical;
-                transition: border-color 0.3s ease;
+            /* ===== TOAST ===== */
+            .toast {
+                position: fixed;
+                bottom: 2rem;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.85);
+                backdrop-filter: blur(12px);
+                color: #f0f6fc;
+                padding: 0.7rem 2rem;
+                border-radius: 60px;
+                font-weight: 500;
+                font-size: 0.9rem;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 999;
+                max-width: 90%;
             }
-            .modal-new-idea .field textarea:focus {
-                outline: none;
-                border-color: #4a8cff;
-            }
+            .toast.visible { opacity: 1; }
+            .toast.error { background: rgba(180, 30, 30, 0.85); }
+            .toast.success { background: rgba(20, 120, 70, 0.85); }
+            .toast.warning { background: rgba(180, 130, 30, 0.85); }
 
             /* ===== RESPONSIVE ===== */
             @media (max-width: 768px) {
@@ -787,19 +614,7 @@
                 .main-header h1 {
                     font-size: 1.4rem;
                 }
-                .user-view .editor-toolbar {
-                    flex-direction: column;
-                    align-items: stretch;
-                    gap: 0.5rem;
-                }
-                .user-view .editor-toolbar .left,
-                .user-view .editor-toolbar .right {
-                    flex-wrap: wrap;
-                }
-                .user-view .editor-toolbar .title-input {
-                    min-width: 100px;
-                }
-                .guest-view .mic-btn {
+                .mic-view .mic-btn {
                     width: 110px;
                     height: 110px;
                     font-size: 3rem;
@@ -807,12 +622,20 @@
                 .modal {
                     padding: 1.5rem;
                 }
+                .sidebar-overlay.open {
+                    display: block;
+                }
             }
             @media (min-width: 769px) {
                 .sidebar {
                     display: flex !important;
+                    position: relative;
+                    transform: none !important;
                 }
                 .btn-hamburger {
+                    display: none !important;
+                }
+                .sidebar-overlay {
                     display: none !important;
                 }
             }
@@ -821,6 +644,9 @@
     <body>
         <!-- ===== TOAST ===== -->
         <div id="toast" class="toast"></div>
+
+        <!-- ===== OVERLAY PARA CERRAR SIDEBAR ===== -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <!-- ===== MODAL LOGIN ===== -->
         <div class="modal-overlay" id="loginModal">
@@ -856,7 +682,7 @@
                 </div>
                 <div class="field">
                     <label>Contenido (Markdown)</label>
-                    <textarea id="newIdeaContent" placeholder="Escribe tu idea en Markdown..."></textarea>
+                    <textarea id="newIdeaContent" placeholder="Pega aquí el contenido desarrollado por Gemini..."></textarea>
                 </div>
                 <div class="actions">
                     <button class="btn-primary" id="saveIdeaBtn">Guardar idea</button>
@@ -867,7 +693,7 @@
 
         <!-- ===== APP ===== -->
         <div class="app-container">
-            <!-- SIDEBAR -->
+            <!-- SIDEBAR (solo para usuarios autenticados) -->
             <aside class="sidebar" id="sidebar">
                 <div class="sidebar-header">
                     <h2>📂 Mis ideas</h2>
@@ -884,7 +710,7 @@
                 </div>
             </aside>
 
-            <!-- MAIN -->
+            <!-- MAIN (siempre visible) -->
             <main class="main" id="mainContent">
                 <!-- HEADER -->
                 <div class="main-header">
@@ -897,8 +723,8 @@
                     </div>
                 </div>
 
-                <!-- VISTA DE PRUEBA (GUEST) -->
-                <div class="guest-view" id="guestView">
+                <!-- VISTA PRINCIPAL: MICRÓFONO -->
+                <div class="mic-view" id="micView">
                     <div class="mic-container">
                         <button class="mic-btn" id="micBtn" title="Grabar / Detener">🎤</button>
                         <div class="mic-status" id="micStatus">Toca el micrófono para empezar</div>
@@ -927,28 +753,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- VISTA DE USUARIO -->
-                <div class="user-view" id="userView">
-                    <div class="idea-editor">
-                        <div class="editor-toolbar">
-                            <div class="left">
-                                <input type="text" class="title-input" id="editorTitle" placeholder="Título de la idea..." />
-                            </div>
-                            <div class="right">
-                                <button id="editToggleBtn" class="active-mode">✏️ Editar</button>
-                                <button id="copyIdeaBtn" class="btn-copy">📋 Copiar</button>
-                            </div>
-                        </div>
-                        <div class="editor-body">
-                            <textarea id="editorContent" style="display: none;" placeholder="Escribe tu idea en Markdown..."></textarea>
-                            <div class="preview" id="editorPreview"></div>
-                        </div>
-                    </div>
-                    <div style="text-align: center; margin-top: 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.15);">
-                        Selecciona una idea de la lista o crea una nueva.
-                    </div>
-                </div>
             </main>
         </div>
 
@@ -971,8 +775,7 @@
                 //  DOM REFS
                 // ================================================================
                 const $ = id => document.getElementById(id);
-                const guestView = $('guestView');
-                const userView = $('userView');
+                const mainTitle = $('mainTitle');
                 const authSection = $('authSection');
                 const loginBtn = $('loginBtn');
                 const loginModal = $('loginModal');
@@ -984,9 +787,8 @@
                 const loginToggleLink = $('loginToggleLink');
                 const loginModeText = $('loginModeText');
                 const loginTitle = $('loginTitle');
-                const userEmailDisplay = $('userEmailDisplay');
-                const logoutBtn = $('logoutBtn');
                 const sidebar = $('sidebar');
+                const sidebarOverlay = $('sidebarOverlay');
                 const hamburgerBtn = $('hamburgerBtn');
                 const ideaList = $('ideaList');
                 const newIdeaBtn = $('newIdeaBtn');
@@ -996,12 +798,8 @@
                 const newIdeaContent = $('newIdeaContent');
                 const saveIdeaBtn = $('saveIdeaBtn');
                 const cancelNewIdeaBtn = $('cancelNewIdeaBtn');
-                const editorTitle = $('editorTitle');
-                const editorContent = $('editorContent');
-                const editorPreview = $('editorPreview');
-                const editToggleBtn = $('editToggleBtn');
-                const copyIdeaBtn = $('copyIdeaBtn');
-                const mainTitle = $('mainTitle');
+                const userEmailDisplay = $('userEmailDisplay');
+                const logoutBtn = $('logoutBtn');
                 const toast = $('toast');
 
                 // Guest DOM
@@ -1018,7 +816,7 @@
                 const toggleLabel = $('toggleLabel');
 
                 // ================================================================
-                //  PROMPTS (GUEST)
+                //  PROMPTS
                 // ================================================================
                 const PROMPT_MARKDOWN = `Eres un organizador de pensamientos, no un vendedor. Tu única misión es tomar mi transcripción de voz (que puede estar desordenada, con frases cortadas, muletillas o ideas saltando de un lado a otro) y ayudarme a **ordenar el caos** de mi cabeza.
 
@@ -1136,7 +934,7 @@
                 }
 
                 // ================================================================
-                //  GUEST – MICRÓFONO Y TRANSCRIPCIÓN
+                //  MICRÓFONO Y TRANSCRIPCIÓN (GUEST + USER)
                 // ================================================================
                 function startRecognition() {
                     try {
@@ -1352,19 +1150,17 @@
 
                 function toggleMode() {
                     if (toggleSwitch.classList.contains('active')) {
-                        // Cambiar a Universal
                         toggleSwitch.classList.remove('active');
                         toggleLabel.classList.remove('active');
                         showToast('Modo Universal activado (texto plano)', 'info', 2000);
                     } else {
-                        // Cambiar a Markdown
                         toggleSwitch.classList.add('active');
                         toggleLabel.classList.add('active');
                         showToast('Modo Markdown activado', 'info', 2000);
                     }
                 }
 
-                // Eventos guest
+                // Eventos micrófono
                 micBtn.addEventListener('click', toggleRecording);
                 nextBtn.addEventListener('click', handleNext);
                 retryBtn.addEventListener('click', handleRetry);
@@ -1428,10 +1224,11 @@
 
                 logoutBtn.addEventListener('click', async () => {
                     await supabase.auth.signOut();
+                    showToast('Sesión cerrada', 'info');
                 });
 
                 // ================================================================
-                //  CRUD IDEAS
+                //  CRUD IDEAS (SOLO PARA AUTENTICADOS)
                 // ================================================================
                 async function loadIdeas() {
                     if (!currentUser) return;
@@ -1447,9 +1244,7 @@
                     ideas = data || [];
                     renderIdeaList();
                     if (ideas.length > 0 && !currentIdeaId) {
-                        selectIdea(ideas[0].id);
-                    } else if (ideas.length === 0) {
-                        clearEditor();
+                        // No seleccionamos automáticamente para no interferir con el micrófono
                     }
                 }
 
@@ -1479,7 +1274,12 @@
                         el.addEventListener('click', (e) => {
                             if (e.target.closest('.actions')) return;
                             const id = el.dataset.id;
-                            selectIdea(id);
+                            // Podríamos abrir la idea en un modal o editor, pero por ahora solo mostramos un toast
+                            const idea = ideas.find(i => i.id === id);
+                            if (idea) {
+                                showToast(`📄 ${idea.title || 'Sin título'} seleccionada`, 'info', 2000);
+                                // Aquí podrías abrir la idea en el editor, pero mantengamos la simplicidad
+                            }
                         });
                     });
                     ideaList.querySelectorAll('.copy-idea').forEach(btn => {
@@ -1492,82 +1292,6 @@
                     });
                 }
 
-                function selectIdea(id) {
-                    currentIdeaId = id;
-                    const idea = ideas.find(i => i.id === id);
-                    if (!idea) return;
-                    editorTitle.value = idea.title || '';
-                    editorContent.value = idea.content || '';
-                    renderPreview();
-                    renderIdeaList();
-                    if (isEditing) toggleEditMode();
-                }
-
-                function clearEditor() {
-                    currentIdeaId = null;
-                    editorTitle.value = '';
-                    editorContent.value = '';
-                    editorPreview.innerHTML = '<div style="color: rgba(255,255,255,0.2); padding: 2rem 0; text-align: center;">Selecciona una idea o crea una nueva.</div>';
-                    if (isEditing) toggleEditMode();
-                }
-
-                function renderPreview() {
-                    const content = editorContent.value || '';
-                    try {
-                        const html = marked.parse(content);
-                        editorPreview.innerHTML = html;
-                    } catch (e) {
-                        editorPreview.innerHTML = '<div style="color: #ff6b6b;">Error al renderizar Markdown</div>';
-                    }
-                }
-
-                async function saveCurrentIdea() {
-                    const title = editorTitle.value.trim() || 'Sin título';
-                    const content = editorContent.value.trim();
-                    if (!content) {
-                        showToast('El contenido no puede estar vacío', 'warning');
-                        return;
-                    }
-                    if (!currentUser) return;
-
-                    try {
-                        if (currentIdeaId) {
-                            const { error } = await supabase
-                                .from('ideas')
-                                .update({ title, content, updated_at: new Date().toISOString() })
-                                .eq('id', currentIdeaId);
-                            if (error) throw error;
-                            const idea = ideas.find(i => i.id === currentIdeaId);
-                            if (idea) {
-                                idea.title = title;
-                                idea.content = content;
-                                idea.updated_at = new Date().toISOString();
-                            }
-                            showToast('Idea actualizada', 'success');
-                        } else {
-                            const { data, error } = await supabase
-                                .from('ideas')
-                                .insert([{ user_id: currentUser.id, title, content }])
-                                .select();
-                            if (error) throw error;
-                            if (data && data.length > 0) {
-                                ideas.unshift(data[0]);
-                                currentIdeaId = data[0].id;
-                                showToast('Idea guardada', 'success');
-                            }
-                        }
-                        renderIdeaList();
-                        const idea = ideas.find(i => i.id === currentIdeaId);
-                        if (idea) {
-                            editorTitle.value = idea.title;
-                            editorContent.value = idea.content;
-                            renderPreview();
-                        }
-                    } catch (err) {
-                        showToast('Error al guardar: ' + err.message, 'error');
-                    }
-                }
-
                 function copyIdeaContent(idea) {
                     const text = `# ${idea.title || 'Sin título'}\n\n${idea.content || ''}`;
                     copyToClipboard(text).then(() => {
@@ -1578,37 +1302,18 @@
                 }
 
                 // ================================================================
-                //  EDITOR
-                // ================================================================
-                function toggleEditMode() {
-                    isEditing = !isEditing;
-                    if (isEditing) {
-                        editorContent.style.display = 'block';
-                        editorPreview.style.display = 'none';
-                        editToggleBtn.textContent = '👁️ Ver';
-                        editToggleBtn.classList.remove('active-mode');
-                    } else {
-                        editorContent.style.display = 'none';
-                        editorPreview.style.display = 'block';
-                        renderPreview();
-                        editToggleBtn.textContent = '✏️ Editar';
-                        editToggleBtn.classList.add('active-mode');
-                        if (currentIdeaId || editorContent.value.trim()) {
-                            saveCurrentIdea();
-                        }
-                    }
-                }
-
-                editToggleBtn.addEventListener('click', toggleEditMode);
-
-                // ================================================================
-                //  NUEVA IDEA
+                //  NUEVA IDEA (MODAL)
                 // ================================================================
                 newIdeaBtn.addEventListener('click', () => {
+                    if (!currentUser) {
+                        showToast('Inicia sesión para guardar ideas', 'warning');
+                        return;
+                    }
                     newIdeaModal.classList.add('open');
                     newIdeaTitle.value = '';
                     newIdeaContent.value = '';
                 });
+
                 closeNewIdeaModal.addEventListener('click', () => newIdeaModal.classList.remove('open'));
                 cancelNewIdeaBtn.addEventListener('click', () => newIdeaModal.classList.remove('open'));
                 newIdeaModal.addEventListener('click', (e) => {
@@ -1616,13 +1321,16 @@
                 });
 
                 saveIdeaBtn.addEventListener('click', async () => {
+                    if (!currentUser) {
+                        showToast('Inicia sesión para guardar', 'warning');
+                        return;
+                    }
                     const title = newIdeaTitle.value.trim() || 'Sin título';
                     const content = newIdeaContent.value.trim();
                     if (!content) {
                         showToast('El contenido no puede estar vacío', 'warning');
                         return;
                     }
-                    if (!currentUser) return;
                     try {
                         const { data, error } = await supabase
                             .from('ideas')
@@ -1633,9 +1341,8 @@
                             ideas.unshift(data[0]);
                             currentIdeaId = data[0].id;
                             renderIdeaList();
-                            selectIdea(currentIdeaId);
                             newIdeaModal.classList.remove('open');
-                            showToast('Nueva idea creada', 'success');
+                            showToast('✅ Idea guardada', 'success');
                         }
                     } catch (err) {
                         showToast('Error: ' + err.message, 'error');
@@ -1643,15 +1350,33 @@
                 });
 
                 // ================================================================
-                //  COPY IDEA (desde toolbar)
+                //  SIDEBAR TOGGLE (hamburguesa y overlay)
                 // ================================================================
-                copyIdeaBtn.addEventListener('click', () => {
-                    if (!currentIdeaId) {
-                        showToast('Selecciona una idea primero', 'warning');
-                        return;
+                function toggleSidebar(open) {
+                    if (open === undefined) {
+                        sidebar.classList.toggle('open');
+                        sidebarOverlay.classList.toggle('open');
+                    } else if (open) {
+                        sidebar.classList.add('open');
+                        sidebarOverlay.classList.add('open');
+                    } else {
+                        sidebar.classList.remove('open');
+                        sidebarOverlay.classList.remove('open');
                     }
-                    const idea = ideas.find(i => i.id === currentIdeaId);
-                    if (idea) copyIdeaContent(idea);
+                }
+
+                hamburgerBtn.addEventListener('click', () => toggleSidebar());
+                sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+
+                // Cerrar sidebar al hacer clic fuera en escritorio (si está abierta y no es móvil)
+                document.addEventListener('click', (e) => {
+                    if (window.innerWidth > 768) return;
+                    if (sidebar.classList.contains('open') && 
+                        !sidebar.contains(e.target) && 
+                        e.target !== hamburgerBtn && 
+                        !hamburgerBtn.contains(e.target)) {
+                        toggleSidebar(false);
+                    }
                 });
 
                 // ================================================================
@@ -1666,10 +1391,9 @@
                                 <span class="email">${currentUser.email}</span>
                             </div>
                         `;
-                        // Cambiar a vista de usuario
-                        guestView.style.display = 'none';
-                        userView.classList.add('visible');
-                        mainTitle.textContent = '📝 Mis ideas';
+                        // Mostrar sidebar
+                        sidebar.style.display = 'flex';
+                        mainTitle.textContent = '🎙️ ideas';
                         await loadIdeas();
                     } else {
                         currentUser = null;
@@ -1677,28 +1401,22 @@
                         document.getElementById('loginBtn').addEventListener('click', () => {
                             loginModal.classList.add('open');
                         });
-                        guestView.style.display = 'flex';
-                        userView.classList.remove('visible');
+                        // Ocultar sidebar
+                        sidebar.style.display = 'none';
+                        sidebar.classList.remove('open');
+                        sidebarOverlay.classList.remove('open');
                         mainTitle.textContent = '🎙️ ideas';
                         ideas = [];
                         currentIdeaId = null;
                         renderIdeaList();
-                        clearEditor();
                     }
-                });
-
-                // ================================================================
-                //  HAMBURGER MENU
-                // ================================================================
-                hamburgerBtn.addEventListener('click', () => {
-                    sidebar.classList.toggle('open');
                 });
 
                 // ================================================================
                 //  INICIO
                 // ================================================================
                 showToast('Bienvenido a ideas', 'info', 3000);
-                console.log('🎙️ ideas app v7.0 (completa)');
+                console.log('🎙️ ideas app v8.0 - micrófono como vista principal');
             })();
         </script>
     </body>
