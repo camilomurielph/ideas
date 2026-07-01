@@ -934,7 +934,7 @@
                 }
 
                 // ================================================================
-                //  MICRÓFONO Y TRANSCRIPCIÓN (GUEST + USER)
+                //  MICRÓFONO Y TRANSCRIPCIÓN
                 // ================================================================
                 function startRecognition() {
                     try {
@@ -1223,12 +1223,16 @@
                 });
 
                 logoutBtn.addEventListener('click', async () => {
-                    await supabase.auth.signOut();
-                    showToast('Sesión cerrada', 'info');
+                    try {
+                        await supabase.auth.signOut();
+                        showToast('Sesión cerrada', 'info');
+                    } catch (err) {
+                        showToast('Error al cerrar sesión: ' + err.message, 'error');
+                    }
                 });
 
                 // ================================================================
-                //  CRUD IDEAS (SOLO PARA AUTENTICADOS)
+                //  CRUD IDEAS
                 // ================================================================
                 async function loadIdeas() {
                     if (!currentUser) return;
@@ -1243,9 +1247,6 @@
                     }
                     ideas = data || [];
                     renderIdeaList();
-                    if (ideas.length > 0 && !currentIdeaId) {
-                        // No seleccionamos automáticamente para no interferir con el micrófono
-                    }
                 }
 
                 function renderIdeaList() {
@@ -1274,11 +1275,9 @@
                         el.addEventListener('click', (e) => {
                             if (e.target.closest('.actions')) return;
                             const id = el.dataset.id;
-                            // Podríamos abrir la idea en un modal o editor, pero por ahora solo mostramos un toast
                             const idea = ideas.find(i => i.id === id);
                             if (idea) {
                                 showToast(`📄 ${idea.title || 'Sin título'} seleccionada`, 'info', 2000);
-                                // Aquí podrías abrir la idea en el editor, pero mantengamos la simplicidad
                             }
                         });
                     });
@@ -1295,14 +1294,14 @@
                 function copyIdeaContent(idea) {
                     const text = `# ${idea.title || 'Sin título'}\n\n${idea.content || ''}`;
                     copyToClipboard(text).then(() => {
-                        showToast('Idea copiada al portapapeles', 'success');
+                        showToast('✅ Idea copiada al portapapeles', 'success');
                     }).catch(() => {
-                        showToast('No se pudo copiar', 'error');
+                        showToast('❌ No se pudo copiar', 'error');
                     });
                 }
 
                 // ================================================================
-                //  NUEVA IDEA (MODAL)
+                //  NUEVA IDEA
                 // ================================================================
                 newIdeaBtn.addEventListener('click', () => {
                     if (!currentUser) {
@@ -1312,6 +1311,8 @@
                     newIdeaModal.classList.add('open');
                     newIdeaTitle.value = '';
                     newIdeaContent.value = '';
+                    // Forzar foco en el título
+                    setTimeout(() => newIdeaTitle.focus(), 100);
                 });
 
                 closeNewIdeaModal.addEventListener('click', () => newIdeaModal.classList.remove('open'));
@@ -1321,6 +1322,7 @@
                 });
 
                 saveIdeaBtn.addEventListener('click', async () => {
+                    console.log('🔹 Click en Guardar idea');
                     if (!currentUser) {
                         showToast('Inicia sesión para guardar', 'warning');
                         return;
@@ -1332,25 +1334,33 @@
                         return;
                     }
                     try {
+                        console.log('🔄 Insertando idea en Supabase...');
                         const { data, error } = await supabase
                             .from('ideas')
                             .insert([{ user_id: currentUser.id, title, content }])
                             .select();
-                        if (error) throw error;
+                        if (error) {
+                            console.error('❌ Error Supabase:', error);
+                            throw error;
+                        }
                         if (data && data.length > 0) {
+                            console.log('✅ Idea guardada:', data[0]);
                             ideas.unshift(data[0]);
                             currentIdeaId = data[0].id;
                             renderIdeaList();
                             newIdeaModal.classList.remove('open');
                             showToast('✅ Idea guardada', 'success');
+                        } else {
+                            showToast('No se recibió respuesta de la base de datos', 'warning');
                         }
                     } catch (err) {
+                        console.error('❌ Error al guardar:', err);
                         showToast('Error: ' + err.message, 'error');
                     }
                 });
 
                 // ================================================================
-                //  SIDEBAR TOGGLE (hamburguesa y overlay)
+                //  SIDEBAR TOGGLE
                 // ================================================================
                 function toggleSidebar(open) {
                     if (open === undefined) {
@@ -1368,7 +1378,6 @@
                 hamburgerBtn.addEventListener('click', () => toggleSidebar());
                 sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
 
-                // Cerrar sidebar al hacer clic fuera en escritorio (si está abierta y no es móvil)
                 document.addEventListener('click', (e) => {
                     if (window.innerWidth > 768) return;
                     if (sidebar.classList.contains('open') && 
@@ -1383,6 +1392,7 @@
                 //  AUTENTICACIÓN EN TIEMPO REAL
                 // ================================================================
                 supabase.auth.onAuthStateChange(async (event, session) => {
+                    console.log('🔄 Auth event:', event, session?.user?.email);
                     if (session) {
                         currentUser = session.user;
                         userEmailDisplay.textContent = currentUser.email;
@@ -1391,7 +1401,6 @@
                                 <span class="email">${currentUser.email}</span>
                             </div>
                         `;
-                        // Mostrar sidebar
                         sidebar.style.display = 'flex';
                         mainTitle.textContent = '🎙️ ideas';
                         await loadIdeas();
@@ -1401,7 +1410,6 @@
                         document.getElementById('loginBtn').addEventListener('click', () => {
                             loginModal.classList.add('open');
                         });
-                        // Ocultar sidebar
                         sidebar.style.display = 'none';
                         sidebar.classList.remove('open');
                         sidebarOverlay.classList.remove('open');
@@ -1416,7 +1424,7 @@
                 //  INICIO
                 // ================================================================
                 showToast('Bienvenido a ideas', 'info', 3000);
-                console.log('🎙️ ideas app v8.0 - micrófono como vista principal');
+                console.log('🎙️ ideas app v8.1 - con logs de depuración');
             })();
         </script>
     </body>
