@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { showToast } from './ui.js';
+import { getProfile, createDefaultProfile } from './profile.js';
 
 // ================================================================
 //  AUTENTICACIÓN
@@ -68,12 +69,22 @@ export function initAuth(loginModal, closeLoginModal, loginEmail, loginPassword,
         }
     });
 
-    // Escuchar cambios de autenticación
+    // Escuchar cambios de autenticación y cargar perfil
     supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
-            onAuthChange(session.user);
+            const user = session.user;
+            // Obtener o crear perfil
+            let profile = await getProfile(user.id);
+            if (!profile) {
+                profile = await createDefaultProfile(user.id);
+            }
+            if (profile) {
+                onAuthChange(user, profile.ai_preference);
+            } else {
+                onAuthChange(user, 'Gemini');
+            }
         } else {
-            onAuthChange(null);
+            onAuthChange(null, 'Gemini');
         }
     });
 }
