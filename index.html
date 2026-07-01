@@ -44,6 +44,7 @@
                 height: 100vh;
                 overflow: hidden;
                 position: relative;
+                padding-top: env(safe-area-inset-top, 0);
             }
 
             /* ===== OVERLAY PARA CERRAR SIDEBAR EN MÓVIL ===== */
@@ -147,25 +148,6 @@
                 color: rgba(255, 255, 255, 0.3);
                 white-space: nowrap;
             }
-            .idea-item .actions {
-                display: flex;
-                gap: 0.3rem;
-                flex-shrink: 0;
-            }
-            .idea-item .actions button {
-                background: none;
-                border: none;
-                color: rgba(255, 255, 255, 0.3);
-                cursor: pointer;
-                font-size: 0.8rem;
-                padding: 0.1rem 0.3rem;
-                border-radius: 6px;
-                transition: all 0.2s ease;
-            }
-            .idea-item .actions button:hover {
-                color: #f0f6fc;
-                background: rgba(255, 255, 255, 0.06);
-            }
 
             .sidebar-footer {
                 margin-top: 1rem;
@@ -210,6 +192,7 @@
                 margin-bottom: 1.8rem;
                 flex-wrap: wrap;
                 gap: 1rem;
+                margin-top: env(safe-area-inset-top, 0.5rem);
             }
             .main-header .left {
                 display: flex;
@@ -446,7 +429,187 @@
             .mic-view .next-btn-container { display: none; justify-content: center; }
             .mic-view .next-btn-container.visible { display: flex; }
 
-            /* ===== MODALES ===== */
+            /* ===== MODAL DE VISUALIZACIÓN/EDICIÓN DE IDEA ===== */
+            .modal-idea .modal-content {
+                max-width: 600px;
+                width: 95%;
+                max-height: 85vh;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+            }
+            .modal-idea .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .modal-idea .modal-header h2 {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #f0f6fc;
+                margin: 0;
+                word-break: break-word;
+                flex: 1;
+            }
+            .modal-idea .modal-header .actions {
+                display: flex;
+                gap: 0.5rem;
+                flex-shrink: 0;
+            }
+            .modal-idea .modal-header .actions button {
+                background: none;
+                border: none;
+                color: rgba(255, 255, 255, 0.4);
+                cursor: pointer;
+                font-size: 1rem;
+                padding: 0.3rem 0.8rem;
+                border-radius: 40px;
+                transition: all 0.2s ease;
+                font-family: "Montserrat", sans-serif;
+                font-weight: 500;
+                border: 1px solid transparent;
+            }
+            .modal-idea .modal-header .actions button:hover {
+                color: #f0f6fc;
+                background: rgba(255, 255, 255, 0.04);
+            }
+            .modal-idea .modal-header .actions .btn-edit {
+                color: #4a8cff;
+            }
+            .modal-idea .modal-header .actions .btn-edit:hover {
+                background: rgba(74, 140, 255, 0.08);
+                border-color: rgba(74, 140, 255, 0.2);
+            }
+            .modal-idea .modal-header .actions .btn-delete {
+                color: #ff6b6b;
+            }
+            .modal-idea .modal-header .actions .btn-delete:hover {
+                background: rgba(255, 80, 80, 0.08);
+                border-color: rgba(255, 80, 80, 0.2);
+            }
+            .modal-idea .modal-body {
+                flex: 1;
+                overflow-y: auto;
+            }
+            .modal-idea .modal-body .preview {
+                font-size: 0.95rem;
+                line-height: 1.7;
+                color: #e0e0e0;
+                padding: 0.2rem 0;
+            }
+            .modal-idea .modal-body .preview h1,
+            .modal-idea .modal-body .preview h2,
+            .modal-idea .modal-body .preview h3 {
+                font-family: "Georgia", serif;
+                font-weight: 700;
+                margin-top: 1.2rem;
+                margin-bottom: 0.5rem;
+                color: #f0f6fc;
+            }
+            .modal-idea .modal-body .preview p {
+                margin: 0.6rem 0;
+            }
+            .modal-idea .modal-body .preview ul,
+            .modal-idea .modal-body .preview ol {
+                margin: 0.6rem 0;
+                padding-left: 1.5rem;
+            }
+            .modal-idea .modal-body .preview code {
+                background: rgba(255, 255, 255, 0.06);
+                padding: 0.1rem 0.4rem;
+                border-radius: 4px;
+                font-size: 0.9em;
+                color: #f0b0b0;
+            }
+            .modal-idea .modal-body .preview pre {
+                background: rgba(0, 0, 0, 0.3);
+                padding: 1rem;
+                border-radius: 8px;
+                overflow-x: auto;
+            }
+            .modal-idea .modal-body .preview blockquote {
+                border-left: 4px solid #4a8cff;
+                padding-left: 1rem;
+                margin: 0.8rem 0;
+                color: rgba(255, 255, 255, 0.7);
+                font-style: italic;
+            }
+            .modal-idea .modal-body .preview img {
+                max-width: 100%;
+                border-radius: 8px;
+                margin: 0.5rem 0;
+            }
+            .modal-idea .modal-body .preview table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 0.8rem 0;
+            }
+            .modal-idea .modal-body .preview th,
+            .modal-idea .modal-body .preview td {
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 0.4rem 0.8rem;
+                text-align: left;
+            }
+            .modal-idea .modal-body .preview th {
+                background: rgba(255, 255, 255, 0.04);
+            }
+            .modal-idea .modal-body textarea {
+                width: 100%;
+                min-height: 200px;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+                color: #e0e0e0;
+                font-size: 0.95rem;
+                font-family: "Montserrat", monospace;
+                padding: 0.7rem 1rem;
+                resize: vertical;
+                transition: border-color 0.3s ease;
+            }
+            .modal-idea .modal-body textarea:focus {
+                outline: none;
+                border-color: #4a8cff;
+            }
+            .modal-idea .modal-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.8rem;
+                margin-top: 1.2rem;
+                padding-top: 1rem;
+                border-top: 1px solid rgba(255, 255, 255, 0.04);
+            }
+            .modal-idea .modal-footer button {
+                padding: 0.5rem 1.5rem;
+                border: none;
+                border-radius: 60px;
+                font-family: "Montserrat", sans-serif;
+                font-weight: 600;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+            .modal-idea .modal-footer .btn-save {
+                background: linear-gradient(135deg, #1a5cff, #7c3aed);
+                color: white;
+            }
+            .modal-idea .modal-footer .btn-save:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 28px rgba(26, 92, 255, 0.4);
+            }
+            .modal-idea .modal-footer .btn-cancel {
+                background: transparent;
+                color: rgba(255, 255, 255, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+            }
+            .modal-idea .modal-footer .btn-cancel:hover {
+                background: rgba(255, 255, 255, 0.04);
+                color: #f0f6fc;
+            }
+
+            /* ===== MODALES GENERALES ===== */
             .modal-overlay {
                 position: fixed;
                 inset: 0;
@@ -456,6 +619,7 @@
                 align-items: center;
                 justify-content: center;
                 z-index: 1000;
+                padding: 1rem;
             }
             .modal-overlay.open { display: flex; }
             .modal {
@@ -625,6 +789,28 @@
                 .sidebar-overlay.open {
                     display: block;
                 }
+                .modal-idea .modal-content {
+                    max-width: 100%;
+                    width: 100%;
+                    max-height: 95vh;
+                    padding: 1rem;
+                }
+                .modal-idea .modal-header h2 {
+                    font-size: 1.2rem;
+                }
+                .modal-idea .modal-header .actions button {
+                    font-size: 0.8rem;
+                    padding: 0.2rem 0.6rem;
+                }
+                .main {
+                    padding: 1rem;
+                }
+                .main-header {
+                    margin-top: 0.2rem;
+                }
+                .app-container {
+                    padding-top: env(safe-area-inset-top, 0.5rem);
+                }
             }
             @media (min-width: 769px) {
                 .sidebar {
@@ -671,7 +857,7 @@
             </div>
         </div>
 
-        <!-- ===== MODAL NUEVA IDEA ===== -->
+        <!-- ===== MODAL NUEVA IDEA (CREAR) ===== -->
         <div class="modal-overlay modal-new-idea" id="newIdeaModal">
             <div class="modal">
                 <button class="close-modal" id="closeNewIdeaModal">&times;</button>
@@ -691,9 +877,31 @@
             </div>
         </div>
 
+        <!-- ===== MODAL PARA VER/EDITAR IDEA ===== -->
+        <div class="modal-overlay modal-idea" id="viewIdeaModal">
+            <div class="modal modal-content">
+                <button class="close-modal" id="closeViewIdeaModal">&times;</button>
+                <div class="modal-header">
+                    <h2 id="viewIdeaTitle">Título</h2>
+                    <div class="actions">
+                        <button class="btn-edit" id="editIdeaBtn">✏️ Editar</button>
+                        <button class="btn-delete" id="deleteIdeaBtn">🗑️ Eliminar</button>
+                    </div>
+                </div>
+                <div class="modal-body" id="viewIdeaBody">
+                    <div class="preview" id="viewIdeaPreview"></div>
+                    <textarea id="viewIdeaEditor" style="display: none;"></textarea>
+                </div>
+                <div class="modal-footer" id="viewIdeaFooter" style="display: none;">
+                    <button class="btn-cancel" id="cancelEditIdeaBtn">Cancelar</button>
+                    <button class="btn-save" id="updateIdeaBtn">Actualizar</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== APP ===== -->
         <div class="app-container">
-            <!-- SIDEBAR (solo para usuarios autenticados) -->
+            <!-- SIDEBAR -->
             <aside class="sidebar" id="sidebar">
                 <div class="sidebar-header">
                     <h2>📂 Mis ideas</h2>
@@ -710,9 +918,8 @@
                 </div>
             </aside>
 
-            <!-- MAIN (siempre visible) -->
+            <!-- MAIN -->
             <main class="main" id="mainContent">
-                <!-- HEADER -->
                 <div class="main-header">
                     <div class="left">
                         <button class="btn-hamburger" id="hamburgerBtn">☰</button>
@@ -761,7 +968,7 @@
                 "use strict";
 
                 // ================================================================
-                //  CONFIGURACIÓN SUPABASE (CAMBIA ESTOS VALORES)
+                //  CONFIGURACIÓN SUPABASE
                 // ================================================================
                 const SUPABASE_URL = 'https://vqfnfggupczdchadoqrj.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZm5mZ2d1cGN6ZGNoYWRvcXJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MTI4NzcsImV4cCI6MjA5ODQ4ODg3N30.eD4tJKpNQDz0pOkSD6tIXGcZuKTa2M-fWqSV-QYHWHM';
@@ -801,6 +1008,19 @@
                 const userEmailDisplay = $('userEmailDisplay');
                 const logoutBtn = $('logoutBtn');
                 const toast = $('toast');
+
+                // Modal ver/editar idea
+                const viewIdeaModal = $('viewIdeaModal');
+                const closeViewIdeaModal = $('closeViewIdeaModal');
+                const viewIdeaTitle = $('viewIdeaTitle');
+                const viewIdeaPreview = $('viewIdeaPreview');
+                const viewIdeaEditor = $('viewIdeaEditor');
+                const viewIdeaBody = $('viewIdeaBody');
+                const viewIdeaFooter = $('viewIdeaFooter');
+                const editIdeaBtn = $('editIdeaBtn');
+                const deleteIdeaBtn = $('deleteIdeaBtn');
+                const cancelEditIdeaBtn = $('cancelEditIdeaBtn');
+                const updateIdeaBtn = $('updateIdeaBtn');
 
                 // Guest DOM
                 const micBtn = $('micBtn');
@@ -865,8 +1085,8 @@
 
                 let currentUser = null;
                 let ideas = [];
-                let currentIdeaId = null;
-                let isEditing = false;
+                let currentIdeaId = null; // ID de la idea que se está viendo/editando
+                let isEditing = false; // modo edición dentro del modal
 
                 // ================================================================
                 //  UTILIDADES
@@ -1263,45 +1483,123 @@
                             <div class="idea-item ${active}" data-id="${idea.id}">
                                 <span class="title">${idea.title || 'Sin título'}</span>
                                 <span class="date">${formatDate(idea.updated_at)}</span>
-                                <div class="actions">
-                                    <button class="copy-idea" data-id="${idea.id}" title="Copiar">📋</button>
-                                </div>
                             </div>
                         `;
                     });
                     ideaList.innerHTML = html;
 
                     ideaList.querySelectorAll('.idea-item').forEach(el => {
-                        el.addEventListener('click', (e) => {
-                            if (e.target.closest('.actions')) return;
+                        el.addEventListener('click', () => {
                             const id = el.dataset.id;
                             const idea = ideas.find(i => i.id === id);
                             if (idea) {
-                                showToast(`📄 ${idea.title || 'Sin título'} seleccionada`, 'info', 2000);
+                                openViewIdea(idea);
                             }
                         });
-                    });
-                    ideaList.querySelectorAll('.copy-idea').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const id = btn.dataset.id;
-                            const idea = ideas.find(i => i.id === id);
-                            if (idea) copyIdeaContent(idea);
-                        });
-                    });
-                }
-
-                function copyIdeaContent(idea) {
-                    const text = `# ${idea.title || 'Sin título'}\n\n${idea.content || ''}`;
-                    copyToClipboard(text).then(() => {
-                        showToast('✅ Idea copiada al portapapeles', 'success');
-                    }).catch(() => {
-                        showToast('❌ No se pudo copiar', 'error');
                     });
                 }
 
                 // ================================================================
-                //  NUEVA IDEA
+                //  VER / EDITAR IDEA EN MODAL
+                // ================================================================
+                function openViewIdea(idea) {
+                    currentIdeaId = idea.id;
+                    viewIdeaTitle.textContent = idea.title || 'Sin título';
+                    viewIdeaPreview.innerHTML = marked.parse(idea.content || '');
+                    viewIdeaEditor.value = idea.content || '';
+                    viewIdeaEditor.style.display = 'none';
+                    viewIdeaPreview.style.display = 'block';
+                    viewIdeaFooter.style.display = 'none';
+                    isEditing = false;
+                    editIdeaBtn.textContent = '✏️ Editar';
+                    viewIdeaModal.classList.add('open');
+
+                    // Asignar eventos para este modal
+                    editIdeaBtn.onclick = () => enterEditMode(idea);
+                    deleteIdeaBtn.onclick = () => deleteIdea(idea.id);
+                    cancelEditIdeaBtn.onclick = () => cancelEdit(idea);
+                    updateIdeaBtn.onclick = () => updateIdea(idea.id);
+                }
+
+                function enterEditMode(idea) {
+                    isEditing = true;
+                    viewIdeaEditor.style.display = 'block';
+                    viewIdeaPreview.style.display = 'none';
+                    viewIdeaFooter.style.display = 'flex';
+                    editIdeaBtn.textContent = '👁️ Ver';
+                    editIdeaBtn.onclick = () => cancelEdit(idea);
+                    viewIdeaEditor.focus();
+                }
+
+                function cancelEdit(idea) {
+                    isEditing = false;
+                    viewIdeaEditor.style.display = 'none';
+                    viewIdeaPreview.style.display = 'block';
+                    viewIdeaFooter.style.display = 'none';
+                    editIdeaBtn.textContent = '✏️ Editar';
+                    editIdeaBtn.onclick = () => enterEditMode(idea);
+                    // Restaurar contenido
+                    viewIdeaPreview.innerHTML = marked.parse(idea.content || '');
+                    viewIdeaEditor.value = idea.content || '';
+                }
+
+                async function updateIdea(id) {
+                    const newContent = viewIdeaEditor.value.trim();
+                    if (!newContent) {
+                        showToast('El contenido no puede estar vacío', 'warning');
+                        return;
+                    }
+                    const newTitle = viewIdeaTitle.textContent.trim() || 'Sin título';
+                    try {
+                        const { error } = await supabase
+                            .from('ideas')
+                            .update({ title: newTitle, content: newContent, updated_at: new Date().toISOString() })
+                            .eq('id', id);
+                        if (error) throw error;
+                        // Actualizar en memoria
+                        const idea = ideas.find(i => i.id === id);
+                        if (idea) {
+                            idea.title = newTitle;
+                            idea.content = newContent;
+                            idea.updated_at = new Date().toISOString();
+                        }
+                        renderIdeaList();
+                        showToast('✅ Idea actualizada', 'success');
+                        // Refrescar vista
+                        const updatedIdea = ideas.find(i => i.id === id);
+                        if (updatedIdea) {
+                            viewIdeaTitle.textContent = updatedIdea.title;
+                            viewIdeaPreview.innerHTML = marked.parse(updatedIdea.content || '');
+                            viewIdeaEditor.value = updatedIdea.content || '';
+                            cancelEdit(updatedIdea);
+                        }
+                    } catch (err) {
+                        showToast('Error al actualizar: ' + err.message, 'error');
+                    }
+                }
+
+                async function deleteIdea(id) {
+                    if (!confirm('¿Eliminar esta idea permanentemente?')) return;
+                    try {
+                        const { error } = await supabase
+                            .from('ideas')
+                            .delete()
+                            .eq('id', id);
+                        if (error) throw error;
+                        ideas = ideas.filter(i => i.id !== id);
+                        if (currentIdeaId === id) {
+                            currentIdeaId = null;
+                            viewIdeaModal.classList.remove('open');
+                        }
+                        renderIdeaList();
+                        showToast('🗑️ Idea eliminada', 'info');
+                    } catch (err) {
+                        showToast('Error al eliminar: ' + err.message, 'error');
+                    }
+                }
+
+                // ================================================================
+                //  NUEVA IDEA (CREAR)
                 // ================================================================
                 newIdeaBtn.addEventListener('click', () => {
                     if (!currentUser) {
@@ -1311,7 +1609,6 @@
                     newIdeaModal.classList.add('open');
                     newIdeaTitle.value = '';
                     newIdeaContent.value = '';
-                    // Forzar foco en el título
                     setTimeout(() => newIdeaTitle.focus(), 100);
                 });
 
@@ -1322,7 +1619,6 @@
                 });
 
                 saveIdeaBtn.addEventListener('click', async () => {
-                    console.log('🔹 Click en Guardar idea');
                     if (!currentUser) {
                         showToast('Inicia sesión para guardar', 'warning');
                         return;
@@ -1334,27 +1630,19 @@
                         return;
                     }
                     try {
-                        console.log('🔄 Insertando idea en Supabase...');
                         const { data, error } = await supabase
                             .from('ideas')
                             .insert([{ user_id: currentUser.id, title, content }])
                             .select();
-                        if (error) {
-                            console.error('❌ Error Supabase:', error);
-                            throw error;
-                        }
+                        if (error) throw error;
                         if (data && data.length > 0) {
-                            console.log('✅ Idea guardada:', data[0]);
                             ideas.unshift(data[0]);
                             currentIdeaId = data[0].id;
                             renderIdeaList();
                             newIdeaModal.classList.remove('open');
                             showToast('✅ Idea guardada', 'success');
-                        } else {
-                            showToast('No se recibió respuesta de la base de datos', 'warning');
                         }
                     } catch (err) {
-                        console.error('❌ Error al guardar:', err);
                         showToast('Error: ' + err.message, 'error');
                     }
                 });
@@ -1389,10 +1677,23 @@
                 });
 
                 // ================================================================
+                //  CERRAR MODAL DE VER IDEA (al hacer clic fuera o en la X)
+                // ================================================================
+                closeViewIdeaModal.addEventListener('click', () => {
+                    viewIdeaModal.classList.remove('open');
+                    currentIdeaId = null;
+                });
+                viewIdeaModal.addEventListener('click', (e) => {
+                    if (e.target === viewIdeaModal) {
+                        viewIdeaModal.classList.remove('open');
+                        currentIdeaId = null;
+                    }
+                });
+
+                // ================================================================
                 //  AUTENTICACIÓN EN TIEMPO REAL
                 // ================================================================
                 supabase.auth.onAuthStateChange(async (event, session) => {
-                    console.log('🔄 Auth event:', event, session?.user?.email);
                     if (session) {
                         currentUser = session.user;
                         userEmailDisplay.textContent = currentUser.email;
@@ -1417,6 +1718,7 @@
                         ideas = [];
                         currentIdeaId = null;
                         renderIdeaList();
+                        viewIdeaModal.classList.remove('open');
                     }
                 });
 
@@ -1424,7 +1726,7 @@
                 //  INICIO
                 // ================================================================
                 showToast('Bienvenido a ideas', 'info', 3000);
-                console.log('🎙️ ideas app v8.1 - con logs de depuración');
+                console.log('🎙️ ideas app v9.0 - con visualización y edición de ideas');
             })();
         </script>
     </body>
