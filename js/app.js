@@ -1,15 +1,11 @@
 // ================================================================
 //  PUNTO DE ENTRADA DE LA APLICACIÓN
 // ================================================================
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { supabase } from './supabase.js';  // Solo para asegurar que se cargue
 import { initAuth } from './auth.js';
 import { loadIdeas, renderIdeaList, createIdea, updateIdea, deleteIdea, getIdeas, getCurrentIdeaId, setCurrentIdeaId } from './ideas.js';
 import { initMic } from './mic.js';
 import { showToast } from './ui.js';
-
-// Inicializar Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-export { supabase };
 
 // ================================================================
 //  DOM REFS
@@ -119,7 +115,7 @@ function openViewIdea(idea) {
     editIdeaBtn.textContent = '✏️ Editar';
     viewIdeaModal.classList.add('open');
 
-    // Asignar eventos
+    // Asignar eventos (se reasignan cada vez que se abre)
     editIdeaBtn.onclick = () => enterEditMode(idea);
     deleteIdeaBtn.onclick = () => handleDeleteIdea(idea.id);
     cancelEditIdeaBtn.onclick = () => cancelEdit(idea);
