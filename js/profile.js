@@ -40,24 +40,25 @@ export async function createDefaultProfile(userId) {
 
 // Guardar preferencia de IA
 export async function saveAiPreference(userId, aiName) {
-    if (!userId) return;
-    const { error } = await supabase
-        .from('profiles')
-        .upsert({ user_id: userId, ai_preference: aiName }, { onConflict: 'user_id' });
-    if (error) {
-        showToast('Error al guardar preferencia: ' + error.message, 'error');
+    if (!userId) {
+        console.error('No userId provided');
         return false;
     }
-    return true;
-}
-
-// Obtener la URL de la IA según el nombre
-export function getAIUrl(aiName) {
-    const urls = {
-        'Gemini': 'https://gemini.google.com',
-        'Deepseek': 'https://chat.deepseek.com/',
-        'Claude': 'https://claude.ai/new',
-        'ChatGPT': 'https://chatgpt.com/'
-    };
-    return urls[aiName] || urls['Gemini'];
+    console.log('Guardando preferencia:', userId, aiName);
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .upsert({ user_id: userId, ai_preference: aiName }, { onConflict: 'user_id' });
+        if (error) {
+            console.error('Error en upsert:', error);
+            showToast('Error al guardar preferencia: ' + error.message, 'error');
+            return false;
+        }
+        console.log('Preferencia guardada correctamente');
+        return true;
+    } catch (err) {
+        console.error('Excepción al guardar preferencia:', err);
+        showToast('Error: ' + err.message, 'error');
+        return false;
+    }
 }
