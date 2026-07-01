@@ -247,6 +247,7 @@ function cancelEdit(idea) {
 }
 
 async function handleUpdateIdea(id) {
+    console.log('🔹 handleUpdateIdea llamado para id:', id);
     const newContent = viewIdeaEditor.value.trim();
     if (!newContent) {
         showToast('El contenido no puede estar vacío', 'warning');
@@ -307,6 +308,8 @@ function copyPlainText(idea) {
 // ================================================================
 //  NUEVA IDEA
 // ================================================================
+console.log('🔹 Configurando eventos de nueva idea...');
+
 newIdeaBtn.addEventListener('click', () => {
     if (!currentUser) {
         showToast('Inicia sesión para guardar ideas', 'warning');
@@ -337,27 +340,39 @@ pasteFromClipboardBtn?.addEventListener('click', async () => {
     await pasteFromClipboard(newIdeaContent);
 });
 
-saveIdeaBtn.addEventListener('click', async () => {
-    if (!currentUser) {
-        showToast('Inicia sesión para guardar', 'warning');
-        return;
-    }
-    const title = newIdeaTitle.value.trim() || 'Sin título';
-    const content = newIdeaContent.value.trim();
-    if (!content) {
-        showToast('El contenido no puede estar vacío', 'warning');
-        return;
-    }
-    try {
-        await createIdea(title, content, currentUser.id);
-        renderIdeaList(ideaList, openViewIdea);
-        newIdeaModal.classList.remove('open');
-        showToast('✅ Idea guardada. Puedes grabar otra idea.', 'success', 3000);
-        resetGuia();
-    } catch (err) {
-        showToast('Error: ' + err.message, 'error');
-    }
-});
+// Botón Guardar idea
+if (saveIdeaBtn) {
+    saveIdeaBtn.addEventListener('click', async () => {
+        console.log('🔹 Click en Guardar idea');
+        if (!currentUser) {
+            showToast('Inicia sesión para guardar', 'warning');
+            return;
+        }
+        const title = newIdeaTitle.value.trim() || 'Sin título';
+        const content = newIdeaContent.value.trim();
+        if (!content) {
+            showToast('El contenido no puede estar vacío', 'warning');
+            return;
+        }
+        try {
+            const result = await createIdea(title, content, currentUser.id);
+            console.log('✅ Resultado createIdea:', result);
+            if (result) {
+                renderIdeaList(ideaList, openViewIdea);
+                newIdeaModal.classList.remove('open');
+                showToast('✅ Idea guardada. Puedes grabar otra idea.', 'success', 3000);
+                resetGuia();
+            } else {
+                showToast('Error al guardar la idea', 'error');
+            }
+        } catch (err) {
+            console.error('❌ Error al guardar:', err);
+            showToast('Error: ' + err.message, 'error');
+        }
+    });
+} else {
+    console.error('❌ saveIdeaBtn no encontrado');
+}
 
 closeNewIdeaModal.addEventListener('click', () => newIdeaModal.classList.remove('open'));
 cancelNewIdeaBtn.addEventListener('click', () => newIdeaModal.classList.remove('open'));
@@ -384,6 +399,8 @@ viewIdeaModal.addEventListener('click', (e) => {
 // ================================================================
 //  CONFIGURACIÓN DE CUENTA
 // ================================================================
+console.log('🔹 Configurando eventos de configuración...');
+
 configBtn.addEventListener('click', () => {
     if (!currentUser) {
         showToast('Inicia sesión para configurar', 'warning');
@@ -398,30 +415,36 @@ configModal.addEventListener('click', (e) => {
     if (e.target === configModal) configModal.classList.remove('open');
 });
 
-saveConfigBtn.addEventListener('click', async () => {
-    if (!currentUser) {
-        showToast('Inicia sesión para guardar', 'warning');
-        return;
-    }
-    const selectedAI = aiSelect.value;
-    const success = await saveAiPreference(currentUser.id, selectedAI);
-    if (success) {
-        currentAI = selectedAI;
-        showToast(`✅ Preferencia guardada: ${selectedAI}`, 'success');
-        configModal.classList.remove('open');
-        if (waitingForGemini) {
-            showWaitingForGemini();
+if (saveConfigBtn) {
+    saveConfigBtn.addEventListener('click', async () => {
+        console.log('🔹 Click en Guardar preferencia');
+        if (!currentUser) {
+            showToast('Inicia sesión para guardar', 'warning');
+            return;
         }
-        if (newIdeaModal.classList.contains('open')) {
-            newIdeaContent.placeholder = `Pega aquí el contenido desarrollado por ${currentAI}...`;
+        const selectedAI = aiSelect.value;
+        const success = await saveAiPreference(currentUser.id, selectedAI);
+        if (success) {
+            currentAI = selectedAI;
+            showToast(`✅ Preferencia guardada: ${selectedAI}`, 'success');
+            configModal.classList.remove('open');
+            if (waitingForGemini) {
+                showWaitingForGemini();
+            }
+            if (newIdeaModal.classList.contains('open')) {
+                newIdeaContent.placeholder = `Pega aquí el contenido desarrollado por ${currentAI}...`;
+            }
         }
-    }
-});
+    });
+} else {
+    console.error('❌ saveConfigBtn no encontrado');
+}
 
 // ================================================================
 //  AUTENTICACIÓN (callback)
 // ================================================================
 function onAuthChange(user, aiPreference) {
+    console.log('🔹 onAuthChange llamado, user:', user?.email);
     if (user) {
         currentUser = user;
         currentAI = aiPreference || 'Gemini';
@@ -439,9 +462,12 @@ function onAuthChange(user, aiPreference) {
         currentUser = null;
         currentAI = 'Gemini';
         authSection.innerHTML = `<button class="btn-login" id="loginBtn">Iniciar sesión</button>`;
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            loginModal.classList.add('open');
-        });
+        const newLoginBtn = document.getElementById('loginBtn');
+        if (newLoginBtn) {
+            newLoginBtn.addEventListener('click', () => {
+                loginModal.classList.add('open');
+            });
+        }
         sidebar.style.display = 'none';
         sidebar.classList.remove('open');
         sidebarOverlay.classList.remove('open');
@@ -476,4 +502,4 @@ initMic(micBtn, micStatus, helpText, transcriptArea, transcriptContent, nextBtnC
 // ================================================================
 resetGuia();
 showToast('Bienvenido a ideas', 'info', 3000);
-console.log('🎙️ ideas app v14.0 - completamente funcional');
+console.log('🎙️ ideas app v15.0 - totalmente funcional');
