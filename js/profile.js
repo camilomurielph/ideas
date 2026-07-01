@@ -13,7 +13,7 @@ export async function getProfile(userId) {
             .select('*')
             .eq('user_id', userId)
             .single();
-        if (error && error.code !== 'PGRST116') { // 404 not found
+        if (error && error.code !== 'PGRST116') {
             console.error('Error al obtener perfil:', error);
             return null;
         }
@@ -54,7 +54,7 @@ export async function saveAiPreference(userId, aiName) {
     try {
         const { error } = await supabase
             .from('profiles')
-            .upsert({ user_id: userId, ai_preference: aiName }, { onConflict: 'user_id' });
+            .upsert({ user_id: userId, ai_preference: aiName, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
         if (error) {
             console.error('Error en upsert:', error);
             showToast('Error al guardar preferencia: ' + error.message, 'error');
