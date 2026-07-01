@@ -2,7 +2,7 @@ import { supabase } from './supabase.js';
 import { showToast } from './ui.js';
 
 // ================================================================
-//  PERFIL DE USUARIO (preferencias)
+//  PERFIL DE USUARIO (preferencias) CON MANEJO DE RLS
 // ================================================================
 
 export async function getProfile(userId) {
@@ -37,6 +37,12 @@ export async function createDefaultProfile(userId) {
             .single();
         if (error) {
             console.error('Error al crear perfil:', error);
+            if (error.code === '42501') {
+                showToast('⚠️ Error de permisos (RLS). Ejecuta las políticas SQL en Supabase.', 'error', 6000);
+            } else if (error.code === '23505') {
+                // Duplicado, probablemente ya existe, intentamos obtenerlo
+                return await getProfile(userId);
+            }
             return null;
         }
         return data;
@@ -57,7 +63,22 @@ export async function saveAiPreference(userId, aiName) {
             .upsert({ user_id: userId, ai_preference: aiName, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
         if (error) {
             console.error('Error en upsert:', error);
-            showToast('Error al guardar preferencia: ' + error.message, 'error');
+            if (error.code === '42501') {
+                showToast('⚠️ Error de permisos (RLS). Ejecuta las políticas SQL en Supabase.', 'error', 6000);
+            } else if (error.code === '23505') {
+                // Conflicto de clave primaria, intentar actualizar directamente
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ ai_preference: aiName, updated_at: new Date().toISOString() })
+                    .eq('user_id', userId);
+                if (updateError) {
+                    showToast('Error al actualizar preferencia: ' + updateError.message, 'error');
+                    return false;
+                }
+                return true;
+            } else {
+                showToast('Error al guardar preferencia: ' + error.message, 'error');
+            }
             return false;
         }
         return true;
