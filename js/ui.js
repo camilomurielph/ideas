@@ -42,29 +42,6 @@ export function copyToClipboard(text) {
     }
 }
 
-export function openGemini() {
-    const isIPhone = /iPhone/.test(navigator.userAgent);
-    if (isIPhone) {
-        const appScheme = "googlegemini://";
-        const webUrl = "https://gemini.google.com";
-        const win = window.open(appScheme, "_blank");
-        const fallbackTimer = setTimeout(() => {
-            window.open(webUrl, "_blank");
-        }, 1500);
-        const checkClosed = setInterval(() => {
-            if (win && win.closed) {
-                clearTimeout(fallbackTimer);
-                clearInterval(checkClosed);
-            }
-        }, 500);
-        setTimeout(() => {
-            clearInterval(checkClosed);
-        }, 3000);
-    } else {
-        window.open("https://gemini.google.com", "_blank");
-    }
-}
-
 export function getPlainText(markdown) {
     if (!markdown) return '';
     const html = marked.parse(markdown);
@@ -84,5 +61,43 @@ export async function pasteFromClipboard(targetElement) {
         }
     } catch (err) {
         showToast('No se pudo acceder al portapapeles: ' + err.message, 'error');
+    }
+}
+
+// ================================================================
+//  ABRIR IA (CON SOPORTE PARA APP EN IPHONE)
+// ================================================================
+export function openAI(aiName) {
+    const isIPhone = /iPhone/.test(navigator.userAgent);
+    const urls = {
+        'Gemini': 'https://gemini.google.com',
+        'Deepseek': 'https://chat.deepseek.com/',
+        'Claude': 'https://claude.ai/new',
+        'ChatGPT': 'https://chatgpt.com/'
+    };
+    const webUrl = urls[aiName] || urls['Gemini'];
+
+    // Para iPhone, intentar abrir la app nativa (solo Gemini tiene esquema conocido)
+    if (isIPhone && aiName === 'Gemini') {
+        const appScheme = "googlegemini://";
+        // Intentar abrir app
+        const win = window.open(appScheme, "_blank");
+        // Fallback a web si no se abre
+        const fallbackTimer = setTimeout(() => {
+            window.open(webUrl, "_blank");
+        }, 1500);
+        // Si la ventana se cierra, asumimos que la app se abrió
+        const checkClosed = setInterval(() => {
+            if (win && win.closed) {
+                clearTimeout(fallbackTimer);
+                clearInterval(checkClosed);
+            }
+        }, 500);
+        setTimeout(() => {
+            clearInterval(checkClosed);
+        }, 3000);
+    } else {
+        // Resto de dispositivos o IAs: abrir web
+        window.open(webUrl, "_blank");
     }
 }
