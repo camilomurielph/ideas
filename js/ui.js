@@ -64,3 +64,13 @@ export function openGemini() {
         window.open("https://gemini.google.com", "_blank");
     }
 }
+
+// Nueva función: obtener texto plano a partir de markdown
+export function getPlainText(markdown) {
+    if (!markdown) return '';
+    // Convertir a HTML con marked, luego extraer texto
+    const html = marked.parse(markdown);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || '';
+}
